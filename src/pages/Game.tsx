@@ -147,7 +147,7 @@ function Game() {
 
 	useEffect(() => {
 		if (cards.length > 0 && cards.every((c) => c.matched)) {
-			const totalTime = difficulty === 'easy' ? 60 : difficulty === 'medium' ? 90 : difficulty === 'hard' ? 120 : 180
+			const totalTime = difficulty === 'easy' ? 30 : difficulty === 'medium' ? 60 : difficulty === 'hard' ? 90 : 120
 			navigate('/result', { state: { win: true, flips: flipCount, timeTaken: totalTime - timeLeft } })
 		}
 	}, [cards, timeLeft, flipCount, difficulty, navigate])

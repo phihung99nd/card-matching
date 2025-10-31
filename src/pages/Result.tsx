@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useLocation, useNavigate } from 'react-router-dom'
 
 function Result() {
@@ -23,7 +24,7 @@ function Result() {
 				</div>
 				<div className="mt-6 flex gap-3 justify-center">
 					<button
-						onClick={() => navigate(-1)}
+						onClick={() => navigate('/')}
 						className="inline-flex items-center justify-center rounded-xl bg-white text-indigo-700 font-semibold px-4 py-2 shadow hover:opacity-90"
 					>
 						Back

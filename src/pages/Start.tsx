@@ -96,7 +96,7 @@ function Start() {
 
 				<button
 					onClick={handleStart}
-					className="mt-6 inline-flex items-center justify-center rounded-xl bg-white text-indigo-700 font-semibold px-5 py-3 shadow-lg shadow-black/10 hover:opacity-90 transition"
+					className="mt-6 inline-flex items-center justify-center rounded-xl bg-white text-slate-700 font-semibold px-5 py-3 shadow-lg shadow-black/10 hover:opacity-90 transition"
 				>
 					Start Game
 				</button>

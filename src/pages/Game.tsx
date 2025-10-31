@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 
 type Card = {
@@ -11,6 +11,12 @@ type Card = {
 
 type Difficulty = 'easy' | 'medium' | 'hard' | 'hell'
 
+type StartState = {
+	difficulty?: Difficulty
+	cardBack?: string
+	imageSet?: string
+}
+
 function useGridSize(difficulty: Difficulty) {
 	if (difficulty === 'easy') return { cols: 4, rows: 3 }
 	if (difficulty === 'medium') return { cols: 6, rows: 5 }
@@ -20,14 +26,14 @@ function useGridSize(difficulty: Difficulty) {
 
 function Game() {
 	const navigate = useNavigate()
-	const location = useLocation() as any
+	const location = useLocation() as { state?: StartState }
 	const difficulty = (location.state?.difficulty ?? 'easy') as Difficulty
 	const cardBack = (location.state?.cardBack ?? 'violet') as string
 	const imageSet = (location.state?.imageSet ?? 'emoji') as string
 	const { cols, rows } = useGridSize(difficulty)
 
 	const [cards, setCards] = useState<Card[]>([])
-	const [selectedIds, setSelectedIds] = useState<number[]>([])
+	const [, setSelectedIds] = useState<number[]>([])
 	const [flipCount, setFlipCount] = useState(0)
 	const [lastMatched, setLastMatched] = useState<number[]>([])
 	const [timeLeft, setTimeLeft] = useState(() => {
@@ -36,6 +42,7 @@ function Game() {
 		if (difficulty === 'hard') return 120
 		return 180
 	})
+	const timerRef = useRef<number | null>(null)
 
 	// Compute a card size that fits the viewport without scrolling
 	const [cardSize, setCardSize] = useState<number>(64)
@@ -61,13 +68,13 @@ function Game() {
 		return () => window.removeEventListener('resize', computeSize)
 	}, [cols, rows])
 
-  function buildPool(kind: string, needed: number): string[] {
-		const emoji = ['😀','😎','🤖','🐶','🐱','🐼','🍎','🍉','🍓','⚽','🎧','🚀','🌈','⭐','🔥','🧠','🎲','🎯','🎮','🎹','🎨','🎪','🎆','🎇','✨','⚡','❄️','🌙','☀️','🌟','🌸','🌼','🌻','🍁','🍂','🍃','🌊','🔥','💧','🪐','🌍','🛰️','📱','💡','🔔','🔮','🧩','🪄','🧸','🪅','🎁','🧁','🍩','🍪','🍰','🍫','🍬','🍭','🥨','🥐','🍔','🍟','🌮','🍕','🍣','🍤','🍙','🍜','🍝','🥟','🥗','🍗','🥩','🥪','🥞','🧇']
-		const animals = ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🐦','🦆','🦉','🦇','🐺','🦄','🐝','🦋','🐌','🐞','🐢','🦎','🐍','🐙','🦑','🦀','🪼','🐠','🐟','🐬','🐳','🦈']
-		const fruits = ['🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍒','🍑','🥭','🍍','🥝','🍈','🍏','🍅','🥥','🌶️','🧄','🧅']
-		const shapes = ['★','☆','◆','◇','◼','◻','⬛','⬜','🔶','🔷','🔺','🔻','🔸','🔹']
-		const weather = ['☀️','🌤️','⛅','🌥️','☁️','🌧️','⛈️','❄️','🌩️','🌫️']
-		const transport = ['🚗','🚕','🚙','🚌','🚎','🏎️','🚓','🚑','🚒','🚚','🚛','🚜','✈️','🚀','🚁','🚂']
+	function buildPool(kind: string, needed: number): string[] {
+		const emoji = ['😀', '😎', '🤖', '🐶', '🐱', '🐼', '🍎', '🍉', '🍓', '⚽', '🎧', '🚀', '🌈', '⭐', '🔥', '🧠', '🎲', '🎯', '🎮', '🎹', '🎨', '🎪', '🎆', '🎇', '✨', '⚡', '❄️', '🌙', '☀️', '🌟', '🌸', '🌼', '🌻', '🍁', '🍂', '🍃', '🌊', '🔥', '💧', '🪐', '🌍', '🛰️', '📱', '💡', '🔔', '🔮', '🧩', '🪄', '🧸', '🪅', '🎁', '🧁', '🍩', '🍪', '🍰', '🍫', '🍬', '🍭', '🥨', '🥐', '🍔', '🍟', '🌮', '🍕', '🍣', '🍤', '🍙', '🍜', '🍝', '🥟', '🥗', '🍗', '🥩', '🥪', '🥞', '🧇']
+		const animals = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🦆', '🦉', '🦇', '🐺', '🦄', '🐝', '🦋', '🐌', '🐞', '🐢', '🦎', '🐍', '🐙', '🦑', '🦀', '🪼', '🐠', '🐟', '🐬', '🐳', '🦈']
+		const fruits = ['🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🫐', '🍒', '🍑', '🥭', '🍍', '🥝', '🍈', '🍏', '🍅', '🥥', '🌶️', '🧄', '🧅']
+		const shapes = ['★', '☆', '◆', '◇', '◼', '◻', '⬛', '⬜', '🔶', '🔷', '🔺', '🔻', '🔸', '🔹']
+		const weather = ['☀️', '🌤️', '⛅', '🌥️', '☁️', '🌧️', '⛈️', '❄️', '🌩️', '🌫️']
+		const transport = ['🚗', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓', '🚑', '🚒', '🚚', '🚛', '🚜', '✈️', '🚀', '🚁', '🚂']
 		const base = kind === 'animals' ? animals : kind === 'fruits' ? fruits : emoji
 		let pool = [...new Set([...base, ...animals, ...fruits, ...shapes, ...weather, ...transport])]
 		if (pool.length >= needed) return pool.slice(0, needed)
@@ -90,12 +97,26 @@ function Game() {
 	}, [cols, rows, imageSet])
 
 	useEffect(() => {
-		if (timeLeft <= 0) {
-			navigate('/result', { state: { win: false, flips: flipCount, timeTaken: 0 } })
-			return
+		if (timerRef.current != null) return
+		timerRef.current = window.setInterval(() => {
+			setTimeLeft((s) => (s > 0 ? s - 1 : 0))
+		}, 1000)
+		return () => {
+			if (timerRef.current != null) {
+				clearInterval(timerRef.current)
+				timerRef.current = null
+			}
 		}
-		const t = setTimeout(() => setTimeLeft((s) => s - 1), 1000)
-		return () => clearTimeout(t)
+	}, [])
+
+	useEffect(() => {
+		if (timeLeft <= 0) {
+			if (timerRef.current != null) {
+				clearInterval(timerRef.current)
+				timerRef.current = null
+			}
+			navigate('/result', { state: { win: false, flips: flipCount, timeTaken: 0 } })
+		}
 	}, [timeLeft, flipCount, navigate])
 
 	useEffect(() => {
@@ -145,30 +166,31 @@ function Game() {
 					style={{ gridTemplateColumns: `repeat(${cols}, ${cardSize}px)` }}
 				>
 					{cards.map((card) => (
-					<motion.button
+						<motion.button
 							key={card.id}
 							whileTap={{ scale: 0.98 }}
 							onClick={() => !card.flipped && !card.matched && flip(card.id)}
 							className={`relative ${card.matched ? 'opacity-60' : ''}`}
 							style={{ perspective: '1000px' }}
 						>
-						{/* Matched bounce + pop flash */}
-						<motion.div
-							className="absolute inset-0"
-							animate={lastMatched.includes(card.id) ? { scale: [1, 2, 1], rotate: [0, -3, 3, 0] } : undefined}
-							transition={{ duration: 0.6, ease: 'easeOut' }}
-						/>
+							{/* Matched bounce + pop flash */}
 							<motion.div
-								className={`absolute inset-0 rounded ring shadow-md shadow-black/20 ${backColor}`}
+								className={`absolute inset-0 rounded ring ring-white`}
+								initial={{ opacity: 0, scale: 1 }}
+								animate={lastMatched.includes(card.id) ? { scale: [1, 1.2, 1], rotate: [0, -3, 3, 0], opacity: [0, 1, 0] } : undefined}
+								transition={{ duration: 0.6, ease: 'easeOut' }}
+							/>
+							<motion.div
+								className={`absolute inset-0 rounded ring ring-white shadow-md shadow-black/20 ${backColor}`}
 								initial={{ rotateY: card.flipped ? 180 : 0 }}
 								animate={{ rotateY: card.flipped ? 180 : 0 }}
 								transition={{ duration: 0.35, ease: 'easeInOut' }}
 								style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d' }}
 							/>
 							<motion.div
-								className="absolute inset-0 flex items-center justify-center rounded ring shadow-md shadow-black/20 bg-white text-slate-900 text-4xl"
-								initial={{ rotateY: card.flipped ? 0 : -180 }}
-								animate={{ rotateY: card.flipped ? 0 : -180 }}
+								className={`absolute inset-0 flex items-center justify-center rounded ring ring-white shadow-md shadow-black/20 bg-white text-slate-900 text-4xl`}
+								initial={{ rotateY: card.flipped ? 0 : -180, scale: card.matched ? 0.9 : 1 }}
+								animate={{ rotateY: card.flipped ? 0 : -180, scale: card.matched ? 0.9 : 1 }}
 								transition={{ duration: 0.35, ease: 'easeInOut' }}
 								style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d' }}
 							>

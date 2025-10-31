@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 
 type Card = {
@@ -13,34 +13,57 @@ type Difficulty = 'easy' | 'medium' | 'hard' | 'hell'
 
 type StartState = {
 	difficulty?: Difficulty
-	cardBack?: string
 	imageSet?: string
 }
 
 function useGridSize(difficulty: Difficulty) {
-	if (difficulty === 'easy') return { cols: 4, rows: 3 }
-	if (difficulty === 'medium') return { cols: 6, rows: 5 }
-	if (difficulty === 'hard') return { cols: 8, rows: 6 }
-	return { cols: 10, rows: 8 }
+	if (difficulty === 'easy') return { cols: 4, rows: 3 } // 12 cards
+	if (difficulty === 'medium') return { cols: 6, rows: 3 } // 18 cards
+	if (difficulty === 'hard') return { cols: 6, rows: 4 } // 24 cards
+	return { cols: 7, rows: 4 } // 28 cards
 }
 
 function Game() {
 	const navigate = useNavigate()
 	const location = useLocation() as { state?: StartState }
 	const difficulty = (location.state?.difficulty ?? 'easy') as Difficulty
-	const cardBack = (location.state?.cardBack ?? 'violet') as string
 	const imageSet = (location.state?.imageSet ?? 'emoji') as string
 	const { cols, rows } = useGridSize(difficulty)
+
+	// Load theme images from /src/assets/Illustration/<theme>
+	const themes = useMemo(() => {
+		const files = import.meta.glob('/src/assets/Illustration/**/*.{png,jpg,jpeg,webp,svg}', {
+			eager: true,
+			query: '?url',
+			import: 'default',
+		}) as Record<string, string>
+		const map: Record<string, { back?: string; cards: string[] }> = {}
+		for (const fullPath in files) {
+			const url = files[fullPath]
+			const parts = fullPath.split('/')
+			const idx = parts.indexOf('Illustration')
+			if (idx === -1 || idx + 1 >= parts.length) continue
+			const themeName = parts[idx + 1]
+			const fileName = parts[parts.length - 1]
+			if (!map[themeName]) map[themeName] = { cards: [] }
+			if (/^back\.(png|jpg|jpeg|webp|svg)$/i.test(fileName)) {
+				map[themeName].back = url
+			} else {
+				map[themeName].cards.push(url)
+			}
+		}
+		return map
+	}, [])
 
 	const [cards, setCards] = useState<Card[]>([])
 	const [, setSelectedIds] = useState<number[]>([])
 	const [flipCount, setFlipCount] = useState(0)
 	const [lastMatched, setLastMatched] = useState<number[]>([])
 	const [timeLeft, setTimeLeft] = useState(() => {
-		if (difficulty === 'easy') return 60
-		if (difficulty === 'medium') return 90
-		if (difficulty === 'hard') return 120
-		return 180
+		if (difficulty === 'easy') return 30
+		if (difficulty === 'medium') return 60
+		if (difficulty === 'hard') return 90
+		return 120
 	})
 	const timerRef = useRef<number | null>(null)
 
@@ -68,21 +91,24 @@ function Game() {
 		return () => window.removeEventListener('resize', computeSize)
 	}, [cols, rows])
 
-	function buildPool(kind: string, needed: number): string[] {
+	const buildPool = useCallback((kind: string, needed: number): string[] => {
+		const theme = themes[kind]
+		if (theme && theme.cards.length > 0) {
+			let pool = theme.cards.filter(Boolean)
+			if (pool.length >= needed) return pool.slice(0, needed)
+			while (pool.length < needed && theme.cards.length > 0) {
+				pool = pool.concat(theme.cards).slice(0, needed)
+			}
+			return pool.slice(0, needed)
+		}
 		const emoji = ['😀', '😎', '🤖', '🐶', '🐱', '🐼', '🍎', '🍉', '🍓', '⚽', '🎧', '🚀', '🌈', '⭐', '🔥', '🧠', '🎲', '🎯', '🎮', '🎹', '🎨', '🎪', '🎆', '🎇', '✨', '⚡', '❄️', '🌙', '☀️', '🌟', '🌸', '🌼', '🌻', '🍁', '🍂', '🍃', '🌊', '🔥', '💧', '🪐', '🌍', '🛰️', '📱', '💡', '🔔', '🔮', '🧩', '🪄', '🧸', '🪅', '🎁', '🧁', '🍩', '🍪', '🍰', '🍫', '🍬', '🍭', '🥨', '🥐', '🍔', '🍟', '🌮', '🍕', '🍣', '🍤', '🍙', '🍜', '🍝', '🥟', '🥗', '🍗', '🥩', '🥪', '🥞', '🧇']
-		const animals = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🦆', '🦉', '🦇', '🐺', '🦄', '🐝', '🦋', '🐌', '🐞', '🐢', '🦎', '🐍', '🐙', '🦑', '🦀', '🪼', '🐠', '🐟', '🐬', '🐳', '🦈']
-		const fruits = ['🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🫐', '🍒', '🍑', '🥭', '🍍', '🥝', '🍈', '🍏', '🍅', '🥥', '🌶️', '🧄', '🧅']
-		const shapes = ['★', '☆', '◆', '◇', '◼', '◻', '⬛', '⬜', '🔶', '🔷', '🔺', '🔻', '🔸', '🔹']
-		const weather = ['☀️', '🌤️', '⛅', '🌥️', '☁️', '🌧️', '⛈️', '❄️', '🌩️', '🌫️']
-		const transport = ['🚗', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓', '🚑', '🚒', '🚚', '🚛', '🚜', '✈️', '🚀', '🚁', '🚂']
-		const base = kind === 'animals' ? animals : kind === 'fruits' ? fruits : emoji
-		let pool = [...new Set([...base, ...animals, ...fruits, ...shapes, ...weather, ...transport])]
+		let pool = [...new Set([...emoji])]
 		if (pool.length >= needed) return pool.slice(0, needed)
 		while (pool.length < needed) {
 			pool = pool.concat(pool).slice(0, needed)
 		}
 		return pool.slice(0, needed)
-	}
+	}, [themes])
 
 	useEffect(() => {
 		const total = cols * rows
@@ -94,7 +120,7 @@ function Game() {
 		setCards(deck)
 		setFlipCount(0)
 		setSelectedIds([])
-	}, [cols, rows, imageSet])
+	}, [cols, rows, imageSet, buildPool])
 
 	useEffect(() => {
 		if (timerRef.current != null) return
@@ -121,7 +147,7 @@ function Game() {
 
 	useEffect(() => {
 		if (cards.length > 0 && cards.every((c) => c.matched)) {
-			const totalTime = difficulty === 'easy' ? 60 : difficulty === 'medium' ? 90 : difficulty === 'hard' ? 120 : 180
+			const totalTime = difficulty === 'easy' ? 30 : difficulty === 'medium' ? 60 : difficulty === 'hard' ? 90 : 120
 			navigate('/result', { state: { win: true, flips: flipCount, timeTaken: totalTime - timeLeft } })
 		}
 	}, [cards, timeLeft, flipCount, difficulty, navigate])
@@ -152,7 +178,8 @@ function Game() {
 		})
 	}
 
-	const backColor = cardBack === 'cyan' ? 'bg-cyan-400' : cardBack === 'rose' ? 'bg-rose-400' : 'bg-violet-400'
+	const themeForBack = themes[imageSet]
+	const backImageUrl = themeForBack?.back
 
 	return (
 		<div className="mx-auto px-4 min-h-screen flex flex-col" style={{ maxWidth: '100%' }}>
@@ -181,11 +208,11 @@ function Game() {
 								transition={{ duration: 0.6, ease: 'easeOut' }}
 							/>
 							<motion.div
-								className={`absolute inset-0 rounded ring ring-white shadow-md shadow-black/20 ${backColor}`}
+								className={`absolute inset-0 rounded ring ring-white shadow-md shadow-black/20 ${backImageUrl ? '' : 'bg-gradient-to-br from-fuchsia-600 via-indigo-600 to-cyan-500'}`}
 								initial={{ rotateY: card.flipped ? 180 : 0 }}
 								animate={{ rotateY: card.flipped ? 180 : 0 }}
 								transition={{ duration: 0.35, ease: 'easeInOut' }}
-								style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d' }}
+								style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d', backgroundSize: 'cover', backgroundPosition: 'center', backgroundImage: backImageUrl ? `url(${backImageUrl})` : undefined }}
 							/>
 							<motion.div
 								className={`absolute inset-0 flex items-center justify-center rounded ring ring-white shadow-md shadow-black/20 bg-white text-slate-900 text-4xl`}
@@ -194,7 +221,11 @@ function Game() {
 								transition={{ duration: 0.35, ease: 'easeInOut' }}
 								style={{ backfaceVisibility: 'hidden', transformStyle: 'preserve-3d' }}
 							>
-								{card.value}
+								{card.value.includes('/') ? (
+									<img src={card.value} alt="card" className="w-full h-full object-cover object-center rounded" />
+								) : (
+									card.value
+								)}
 							</motion.div>
 							{/* Size the card explicitly to avoid page scroll */}
 							<div style={{ width: cardSize, height: Math.round(cardSize * (4 / 3)) }} />

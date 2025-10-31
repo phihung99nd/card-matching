@@ -3,7 +3,7 @@ import { useState } from 'react'
 
 function Start() {
 	const navigate = useNavigate()
-	const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy')
+	const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard' | 'hell'>('easy')
 	const [cardBack, setCardBack] = useState<string>('violet')
 	const [imageSet, setImageSet] = useState<string>('emoji')
 
@@ -26,8 +26,9 @@ function Start() {
 							className="mt-1 w-full rounded-xl bg-white/20 text-white px-3 py-2 outline-none ring-1 ring-white/30 focus:ring-2 focus:ring-white/70"
 						>
 							<option value="easy">Easy (4x3)</option>
-							<option value="medium">Medium (5x4)</option>
-							<option value="hard">Hard (6x5)</option>
+							<option value="medium">Medium (6x5)</option>
+							<option value="hard">Hard (8x6)</option>
+							<option value="hell">Hell (10x8)</option>
 						</select>
 					</label>
 

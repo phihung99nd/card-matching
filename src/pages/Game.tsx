@@ -9,10 +9,11 @@ type Card = {
 	matched: boolean
 }
 
-function useGridSize(difficulty: 'easy' | 'medium' | 'hard') {
+function useGridSize(difficulty: 'easy' | 'medium' | 'hard' | 'hell') {
 	if (difficulty === 'easy') return { cols: 4, rows: 3 }
-	if (difficulty === 'medium') return { cols: 5, rows: 4 }
-	return { cols: 6, rows: 5 }
+	if (difficulty === 'medium') return { cols: 6, rows: 5 }
+	if (difficulty === 'hard') return { cols: 8, rows: 6 }
+	return { cols: 10, rows: 8 }
 }
 
 function Game() {
@@ -29,7 +30,8 @@ function Game() {
 	const [timeLeft, setTimeLeft] = useState(() => {
 		if (difficulty === 'easy') return 60
 		if (difficulty === 'medium') return 90
-		return 120
+		if (difficulty === 'hard') return 120
+		return 180
 	})
 
 	const values = useMemo(() => {
@@ -63,7 +65,7 @@ function Game() {
 
 	useEffect(() => {
 		if (cards.length > 0 && cards.every((c) => c.matched)) {
-			const totalTime = difficulty === 'easy' ? 60 : difficulty === 'medium' ? 90 : 120
+			const totalTime = difficulty === 'easy' ? 60 : difficulty === 'medium' ? 90 : difficulty === 'hard' ? 120 : 180
 			navigate('/result', { state: { win: true, flips: flipCount, timeTaken: totalTime - timeLeft } })
 		}
 	}, [cards, timeLeft, flipCount, difficulty, navigate])

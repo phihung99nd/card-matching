@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../components/ui/select'
 
 function Start() {
 	const navigate = useNavigate()
@@ -13,49 +14,58 @@ function Start() {
 
 	return (
 		<div className="mx-auto max-w-2xl">
-			<div className="bg-white/10 backdrop-blur rounded-2xl p-6 sm:p-8 ring-1 ring-white/20">
+			<div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 sm:p-8 ring-1 ring-white/50">
 				<h1 className="text-3xl font-bold">Card Match</h1>
 				<p className="opacity-90 mt-1">Train your memory. Match all pairs before time runs out.</p>
 
 				<div className="grid sm:grid-cols-2 gap-4 mt-6">
 					<label className="block">
 						<span className="text-sm opacity-90">Difficulty</span>
-						<select
-							value={difficulty}
-							onChange={(e) => setDifficulty(e.target.value as any)}
-							className="mt-1 w-full rounded-xl bg-white/20 text-white px-3 py-2 outline-none ring-1 ring-white/30 focus:ring-2 focus:ring-white/70"
-						>
-							<option value="easy">Easy (4x3)</option>
-							<option value="medium">Medium (6x5)</option>
-							<option value="hard">Hard (8x6)</option>
-							<option value="hell">Hell (10x8)</option>
-						</select>
+					<div className="mt-1">
+						<Select value={difficulty} onValueChange={(v) => setDifficulty(v as any)}>
+							<SelectTrigger>
+								<SelectValue placeholder="Select difficulty" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="easy">Easy (4x3)</SelectItem>
+								<SelectItem value="medium">Medium (6x5)</SelectItem>
+								<SelectItem value="hard">Hard (8x6)</SelectItem>
+								<SelectItem value="hell">Hell (10x8)</SelectItem>
+							</SelectContent>
+						</Select>
+					</div>
 					</label>
 
 					<label className="block">
 						<span className="text-sm opacity-90">Card back</span>
-						<select
-							value={cardBack}
-							onChange={(e) => setCardBack(e.target.value)}
-							className="mt-1 w-full rounded-xl bg-white/20 text-white px-3 py-2 outline-none ring-1 ring-white/30 focus:ring-2 focus:ring-white/70"
-						>
-							<option value="violet">Violet</option>
-							<option value="cyan">Cyan</option>
-							<option value="rose">Rose</option>
-						</select>
+					<div className="mt-1">
+						<Select value={cardBack} onValueChange={setCardBack}>
+							<SelectTrigger>
+								<SelectValue placeholder="Select card back" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="violet">Violet</SelectItem>
+								<SelectItem value="cyan">Cyan</SelectItem>
+								<SelectItem value="rose">Rose</SelectItem>
+							</SelectContent>
+						</Select>
+					</div>
 					</label>
 
 					<label className="block sm:col-span-2">
 						<span className="text-sm opacity-90">Image set</span>
-						<select
-							value={imageSet}
-							onChange={(e) => setImageSet(e.target.value)}
-							className="mt-1 w-full rounded-xl bg-white/20 text-white px-3 py-2 outline-none ring-1 ring-white/30 focus:ring-2 focus:ring-white/70"
-						>
-							<option value="emoji">Emoji</option>
-							<option value="animals">Animals</option>
-							<option value="fruits">Fruits</option>
-						</select>
+					<div className="mt-1">
+						<Select value={imageSet} onValueChange={setImageSet}>
+							<SelectTrigger>
+								<SelectValue placeholder="Select image set" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="emoji">Emoji</SelectItem>
+								<SelectItem value="animals">Animals</SelectItem>
+								<SelectItem value="fruits">Fruits</SelectItem>
+							</SelectContent>
+						</Select>
+					</div>
 					</label>
 				</div>
 

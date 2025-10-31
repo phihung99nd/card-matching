@@ -10,7 +10,7 @@ function App() {
       <div className="min-h-screen bg-gradient-to-br from-fuchsia-600 via-indigo-600 to-cyan-500 text-white">
         <header className="px-6 py-4 flex items-center justify-between">
           <Link to="/" className="font-extrabold tracking-tight text-xl sm:text-2xl">
-            Vibe Match
+            Flip Fiesta
           </Link>
           <nav className="text-sm sm:text-base">
             <Link className="hover:opacity-90" to="/">Start</Link>

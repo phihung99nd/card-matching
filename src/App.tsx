@@ -3,6 +3,7 @@ import './index.css'
 import Start from '@/pages/Start'
 import Game from '@/pages/Game'
 import Result from '@/pages/Result'
+import CardDex from '@/pages/CardDex'
 import { CustomCursor } from '@/components/CustomCursor'
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext'
 import { Switch } from '@/components/ui/switch'
@@ -16,6 +17,9 @@ function ThemeToggle() {
     <div className="flex items-center gap-3">
       <Link className="hover:opacity-90 text-sm sm:text-base text-foreground" to="/">
         Start
+      </Link>
+      <Link className="hover:opacity-90 text-sm sm:text-base text-foreground" to="/card-dex">
+        Card Dex
       </Link>
       <Switch
         checked={theme === "light"}
@@ -54,6 +58,7 @@ function AppContent() {
               <Route path="/" element={<Start />} />
               <Route path="/game" element={<Game />} />
               <Route path="/result" element={<Result />} />
+              <Route path="/card-dex" element={<CardDex />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>

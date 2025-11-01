@@ -7,8 +7,9 @@ import {
   getTimeLimit,
   getFlipLimit,
 } from "../lib/gameConstants";
-import { useThemes } from "../lib/themeUtils";
+import { useCardThemes } from "../lib/themeUtils";
 import { CircularProgress } from "../components/ui/circular-progress";
+import { useTheme } from "@/contexts/ThemeContext";
 
 type Card = {
   id: number;
@@ -32,8 +33,9 @@ function Game() {
   const { cols, rows } = getGridSize(difficulty);
   const maxFlips = limitFlips ? getFlipLimit(difficulty) : Infinity;
 
+  const { theme } = useTheme();
   // Load theme images from /src/assets/Illustration/<theme>
-  const themes = useThemes();
+  const themes = useCardThemes();
 
   const [cards, setCards] = useState<Card[]>([]);
   const [, setSelectedIds] = useState<number[]>([]);
@@ -378,7 +380,7 @@ function Game() {
     >
       <div className="flex items-center justify-center gap-8 mb-4">
         <div className="flex items-center gap-3">
-          <div className="font-semibold">Time:</div>
+          <div className="font-semibold text-foreground">Time:</div>
           <CircularProgress
             value={timeLeft}
             max={getTimeLimit(difficulty)}
@@ -386,9 +388,9 @@ function Game() {
             strokeWidth={6}
           />
         </div>
-        <div className="font-semibold">
+        <div className="font-semibold text-foreground">
           Flips: {flipCount}
-          {limitFlips && <span className="opacity-70"> / {maxFlips}</span>}
+          {limitFlips && <span className="text-muted-foreground"> / {maxFlips}</span>}
         </div>
       </div>
       <div className="flex-1 flex items-center justify-center">
@@ -406,7 +408,7 @@ function Game() {
             >
               {/* Matched bounce + pop flash */}
               <motion.div
-                className={`absolute inset-0 rounded ring ring-white`}
+                className={`absolute inset-0 rounded ring ring-border`}
                 initial={{ opacity: 0, scale: 1 }}
                 animate={
                   lastMatched.includes(card.id)
@@ -420,10 +422,12 @@ function Game() {
                 transition={{ duration: 0.6, ease: "easeOut" }}
               />
               <motion.div
-                className={`absolute inset-0 rounded ring ring-white shadow-md shadow-black/20 ${
+                className={`absolute inset-0 rounded ring ${theme === "dark" ? "ring-white/50" : "ring-black/50"} shadow-md shadow-black/20 ${
                   backImageUrl
                     ? ""
-                    : "bg-gradient-to-br from-fuchsia-600 via-indigo-600 to-cyan-500"
+                    : `bg-gradient-to-br ${
+                      theme === "dark" ? "from-purple-500 via-violet-500 to-indigo-500" : "from-cyan-500 via-teal-500 to-green-500"
+                    }`
                 }`}
                 initial={{ rotateY: card.flipped ? 180 : 0 }}
                 animate={{ rotateY: card.flipped ? 180 : 0 }}
@@ -439,7 +443,7 @@ function Game() {
                 }}
               />
               <motion.div
-                className={`absolute inset-0 flex items-center justify-center rounded ring ring-white shadow-md shadow-black/20 bg-white text-slate-900 text-4xl`}
+                className={`absolute inset-0 flex items-center justify-center rounded ring ${theme === "dark" ? "ring-white/50" : "ring-black/50"} shadow-md shadow-black/20 bg-white text-slate-900 text-4xl`}
                 initial={{
                   rotateY: card.flipped ? 0 : -180,
                   scale: card.matched ? 0.9 : 1,
@@ -478,13 +482,13 @@ function Game() {
       <div className="mt-6 flex gap-3">
         <button
           onClick={() => navigate("/")}
-          className="inline-flex items-center justify-center rounded-xl bg-white text-indigo-700 font-semibold px-4 py-2 shadow hover:opacity-90"
+          className="inline-flex items-center justify-center rounded-xl bg-secondary text-secondary-foreground font-semibold px-4 py-2 shadow hover:opacity-90"
         >
           Quit
         </button>
         <button
           onClick={() => navigate(0)}
-          className="inline-flex items-center justify-center rounded-xl bg-indigo-700 text-white font-semibold px-4 py-2 shadow hover:opacity-90"
+          className="inline-flex items-center justify-center rounded-xl bg-primary text-primary-foreground font-semibold px-4 py-2 shadow hover:opacity-90"
         >
           Restart
         </button>

@@ -1,5 +1,6 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface CircularProgressProps extends React.SVGProps<SVGSVGElement> {
   value: number;
@@ -28,6 +29,8 @@ const CircularProgress = React.forwardRef<SVGSVGElement, CircularProgressProps>(
     const percentage = Math.max(0, Math.min(100, (value / max) * 100));
     const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
+    const { theme } = useTheme();
+
     // Color based on time remaining
     const getColor = () => {
       if (percentage > 50) return "text-indigo-500";
@@ -52,7 +55,7 @@ const CircularProgress = React.forwardRef<SVGSVGElement, CircularProgressProps>(
             fill="none"
             stroke="currentColor"
             strokeWidth={strokeWidth}
-            className="text-white/20"
+            className={theme === "dark" ? "text-white/20" : "text-foreground/20"}
           />
           {/* Progress circle */}
           <circle
@@ -73,7 +76,7 @@ const CircularProgress = React.forwardRef<SVGSVGElement, CircularProgressProps>(
         </svg>
         {showText && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-sm font-semibold text-white">{Math.round(value)}</span>
+            <span className="text-sm font-semibold text-foreground">{Math.round(value)}</span>
           </div>
         )}
       </div>

@@ -13,7 +13,7 @@ export interface ThemesMap {
  * Hook to load theme images from /src/assets/Illustration/<theme>
  * Returns a map of theme names to their card images and back image
  */
-export function useThemes(): ThemesMap {
+export function useCardThemes(): ThemesMap {
   return useMemo(() => {
     const files = import.meta.glob(
       "/src/assets/Illustration/**/*.{png,jpg,jpeg,webp,svg}",

@@ -136,10 +136,22 @@
   }
   body {
     @apply bg-background text-foreground font-poppins;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
   
-  /* Hide default cursor - using custom cursor component instead */
-  * {
-    cursor: none !important;
+  /* Hide default cursor - using custom cursor component instead (desktop only) */
+  @media (pointer: fine) {
+    * {
+      cursor: none !important;
+    }
+  }
+  
+  /* Ensure dark mode is applied by default */
+  :root {
+    color-scheme: dark;
+  }
+  
+  :root:not(.dark) {
+    color-scheme: light;
   }
 }

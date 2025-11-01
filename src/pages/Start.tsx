@@ -9,7 +9,8 @@ import {
 } from "../components/ui/select";
 import { Checkbox } from "../components/ui/checkbox";
 import { type Difficulty, getFlipLimit } from "../lib/gameConstants";
-import { useThemes } from "../lib/themeUtils";
+import { useCardThemes } from "../lib/themeUtils";
+import { useTheme } from "@/contexts/ThemeContext";
 
 function Start() {
   const navigate = useNavigate();
@@ -17,7 +18,8 @@ function Start() {
   const [imageSet, setImageSet] = useState<string>("emoji");
   const [limitFlips, setLimitFlips] = useState<boolean>(false);
 
-  const themesMap = useThemes();
+  const { theme } = useTheme();
+  const themesMap = useCardThemes();
 
   const themeNames = useMemo<string[]>(
     () => Object.keys(themesMap).sort(),
@@ -36,16 +38,16 @@ function Start() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 sm:p-8 ring-1 ring-white/50">
-        <h1 className="text-3xl font-bold">Card Match</h1>
-        <p className="opacity-90 mt-1">
+      <div className="bg-card/80 backdrop-blur-lg rounded-2xl p-6 sm:p-8 ring-1 ring-border">
+        <h1 className="text-3xl font-bold text-card-foreground">Card Match</h1>
+        <p className="text-muted-foreground mt-1">
           Train your memory. Match all pairs before time runs out.
         </p>
 
         <div className="grid md:grid-cols-2 gap-6 mt-6">
           <div className="space-y-4">
             <label className="block">
-              <span className="text-sm opacity-90">Difficulty</span>
+              <span className="text-sm text-muted-foreground">Difficulty</span>
               <div className="mt-1">
                   <Select
                   value={difficulty}
@@ -65,7 +67,7 @@ function Start() {
             </label>
 
             <label className="block">
-              <span className="text-sm opacity-90">Image set</span>
+              <span className="text-sm text-muted-foreground">Image set</span>
               <div className="mt-1">
                 <Select value={imageSet} onValueChange={setImageSet}>
                   <SelectTrigger>
@@ -86,7 +88,7 @@ function Start() {
             <div className="flex items-start gap-3">
               <Checkbox
                 id="flip-limit"
-								className="w-4 h-4 rounded border-white/30 bg-white/10 text-indigo-600 focus:ring-1 focus:ring-indigo-500 focus:ring-offset-0"
+								className="w-4 h-4 rounded border-border bg-background text-primary focus:ring-1 focus:ring-ring focus:ring-offset-0"
                 checked={limitFlips}
                 onCheckedChange={(checked) => setLimitFlips(checked === true)}
               />
@@ -94,9 +96,9 @@ function Start() {
                 <label htmlFor="flip-limit" className="text-sm">
                   Limit flip count
                 </label>
-                <p className="opacity-90 text-sm h-4">
+                <p className="text-muted-foreground text-sm h-4">
                   {limitFlips && (
-                    <span className="block text-xs opacity-70 mt-0.5">
+                    <span className="block text-xs text-muted-foreground/70 mt-0.5">
                       Max {getFlipLimit(difficulty)} flips
                     </span>
                   )}
@@ -106,21 +108,23 @@ function Start() {
           </div>
 
           <div className="block">
-            <span className="text-sm opacity-90">Preview</span>
-            <div className="mt-1 grid grid-cols-2 gap-2 rounded-xl ring-1 ring-white/50 bg-white/5 p-2">
+            <span className="text-sm text-muted-foreground">Preview</span>
+            <div className="mt-1 grid grid-cols-2 gap-2 rounded-xl ring-1 ring-border bg-muted/30 p-2">
               {imageSet === "emoji" ? (
                 <>
                   <div className="flex flex-col">
-                    <span className="text-xs opacity-70 mb-1 text-center">
+                    <span className="text-xs text-muted-foreground mb-1 text-center">
                       Card Back
                     </span>
-                    <div className="flex items-center justify-center overflow-hidden rounded aspect-[3/4] bg-gradient-to-br from-fuchsia-600 via-indigo-600 to-cyan-500 group cursor-pointer transition-transform duration-300 hover:scale-105"></div>
+                    <div className={`flex items-center justify-center overflow-hidden rounded aspect-[3/4] bg-gradient-to-br ${
+                      theme === "dark" ? "from-purple-500 via-violet-500 to-indigo-500" : "from-cyan-500 via-teal-500 to-green-500"
+                    } group cursor-pointer transition-transform duration-300 hover:scale-105`}></div>
                   </div>
                   <div className="flex flex-col">
                     <span className="text-xs opacity-70 mb-1 text-center">
                       Card Face
                     </span>
-                    <div className="flex items-center justify-center overflow-hidden rounded bg-white/5 aspect-[3/4] group cursor-pointer">
+                    <div className="flex items-center justify-center overflow-hidden rounded bg-muted aspect-[3/4] group cursor-pointer">
                       <span className="text-4xl transition-transform duration-300 group-hover:scale-125">😀</span>
                     </div>
                   </div>
@@ -128,10 +132,10 @@ function Start() {
               ) : (
                 <>
                   <div className="flex flex-col">
-                    <span className="text-xs opacity-70 mb-1 text-center">
+                    <span className="text-xs text-muted-foreground mb-1 text-center">
                       Card Back
                     </span>
-                    <div className="flex items-center justify-center overflow-hidden rounded bg-white/5 aspect-[3/4] group cursor-pointer">
+                    <div className="flex items-center justify-center overflow-hidden rounded bg-muted/30 aspect-[3/4] group cursor-pointer">
                       {themesMap[imageSet]?.back ? (
                         <img
                           src={themesMap[imageSet].back}
@@ -139,7 +143,7 @@ function Start() {
                           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                         />
                       ) : (
-                        <span className="text-sm opacity-70">No back</span>
+                        <span className="text-sm text-muted-foreground">No back</span>
                       )}
                     </div>
                   </div>
@@ -147,7 +151,7 @@ function Start() {
                     <span className="text-xs opacity-70 mb-1 text-center">
                       Card Face
                     </span>
-                    <div className="flex items-center justify-center overflow-hidden rounded bg-white/5 aspect-[3/4] group cursor-pointer">
+                    <div className="flex items-center justify-center overflow-hidden rounded bg-muted/30 aspect-[3/4] group cursor-pointer">
                       {themesMap[imageSet]?.cards?.[0] ? (
                         <img
                           src={themesMap[imageSet].cards[0]}
@@ -155,7 +159,7 @@ function Start() {
                           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                         />
                       ) : (
-                        <span className="text-sm opacity-70">No card</span>
+                        <span className="text-sm text-muted-foreground">No card</span>
                       )}
                     </div>
                   </div>
@@ -168,7 +172,7 @@ function Start() {
         <div className="mt-6 flex justify-center md:justify-start">
           <button
             onClick={handleStart}
-            className="inline-flex items-center justify-center rounded-xl bg-white text-slate-700 font-semibold px-5 py-3 shadow-lg shadow-black/10 hover:opacity-90 transition cursor-pointer"
+            className="inline-flex items-center justify-center rounded-xl bg-primary text-primary-foreground font-semibold px-5 py-3 shadow-lg shadow-black/10 hover:opacity-90 transition cursor-pointer"
           >
             Start Game
           </button>

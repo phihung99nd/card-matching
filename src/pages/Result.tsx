@@ -77,13 +77,13 @@ function Result() {
 	return (
 		<div className="mx-auto max-w-xl">
 			<motion.div
-				className="bg-white/10 backdrop-blur rounded-2xl p-6 ring-1 ring-white/20 text-center"
+				className="bg-card/80 backdrop-blur rounded-2xl p-6 ring-1 ring-border text-center"
 				variants={containerVariants}
 				initial="hidden"
 				animate="visible"
 			>
 				<motion.h2
-					className="text-3xl font-bold"
+					className="text-3xl font-bold text-card-foreground"
 					variants={titleVariants}
 					initial="hidden"
 					animate="visible"
@@ -92,30 +92,30 @@ function Result() {
 				</motion.h2>
 				<div className="mt-4 grid grid-cols-2 gap-4 text-left">
 					<motion.div
-						className="bg-white/10 rounded-xl p-4"
+						className="bg-muted/50 rounded-xl p-4"
 						variants={statCardVariants}
 						initial="hidden"
 						animate="visible"
 						custom={0}
 					>
-						<div className="text-sm opacity-90">Flips</div>
-						<div className="text-2xl font-semibold">{flips}</div>
+						<div className="text-sm text-muted-foreground">Flips</div>
+						<div className="text-2xl font-semibold text-card-foreground">{flips}</div>
 					</motion.div>
 					<motion.div
-						className="bg-white/10 rounded-xl p-4"
+						className="bg-muted/50 rounded-xl p-4"
 						variants={statCardVariants}
 						initial="hidden"
 						animate="visible"
 						custom={1}
 					>
-						<div className="text-sm opacity-90">Time</div>
-						<div className="text-2xl font-semibold">{timeTaken}s</div>
+						<div className="text-sm text-muted-foreground">Time</div>
+						<div className="text-2xl font-semibold text-card-foreground">{timeTaken}s</div>
 					</motion.div>
 				</div>
 				<div className="mt-6 flex gap-3 justify-center">
 					<motion.button
 						onClick={() => navigate('/')}
-						className="inline-flex items-center justify-center rounded-xl bg-white text-indigo-700 font-semibold px-4 py-2 shadow hover:opacity-90"
+						className="inline-flex items-center justify-center rounded-xl bg-secondary text-secondary-foreground font-semibold px-4 py-2 shadow hover:opacity-90"
 						variants={buttonVariants}
 						initial="hidden"
 						animate="visible"
@@ -127,7 +127,7 @@ function Result() {
 					</motion.button>
 					<motion.button
 						onClick={() => navigate('/game', { replace: true, state: { difficulty, imageSet, limitFlips } })}
-						className="inline-flex items-center justify-center rounded-xl bg-indigo-700 text-white font-semibold px-4 py-2 shadow hover:opacity-90"
+						className="inline-flex items-center justify-center rounded-xl bg-primary text-primary-foreground font-semibold px-4 py-2 shadow hover:opacity-90"
 						variants={buttonVariants}
 						initial="hidden"
 						animate="visible"

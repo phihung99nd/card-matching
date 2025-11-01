@@ -59,7 +59,7 @@ export function CustomCursor({ cursorImage, pointerImage }: CustomCursorProps) {
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          className="fixed pointer-events-none z-[9999]"
+          className="fixed drop-shadow-md drop-shadow-black/50 pointer-events-none z-[9999]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -79,7 +79,13 @@ export function CustomCursor({ cursorImage, pointerImage }: CustomCursorProps) {
             alt="cursor"
             className="w-6 h-6 select-none"
             style={{
-              imageRendering: "pixelated",
+              imageRendering: "auto",
+              ...({
+                WebkitImageRendering: "auto",
+                MozImageRendering: "auto",
+                msImageRendering: "auto",
+                OImageRendering: "auto",
+              } as React.CSSProperties),
             }}
             draggable={false}
           />

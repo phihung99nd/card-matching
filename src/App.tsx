@@ -16,7 +16,7 @@ function ThemeToggle() {
   return (
     <div className="flex items-center gap-3">
       <Link className="hover:opacity-90 text-sm sm:text-base text-foreground" to="/">
-        Start
+        Play
       </Link>
       <Link className="hover:opacity-90 text-sm sm:text-base text-foreground" to="/card-dex">
         Card Dex

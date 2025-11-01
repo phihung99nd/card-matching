@@ -8,48 +8,16 @@ import {
   SelectItem,
 } from "../components/ui/select";
 import { Checkbox } from "../components/ui/checkbox";
+import { type Difficulty, getFlipLimit } from "../lib/gameConstants";
+import { useThemes } from "../lib/themeUtils";
 
 function Start() {
   const navigate = useNavigate();
-  const [difficulty, setDifficulty] = useState<
-    "easy" | "medium" | "hard" | "hell"
-  >("easy");
+  const [difficulty, setDifficulty] = useState<Difficulty>("easy");
   const [imageSet, setImageSet] = useState<string>("emoji");
   const [limitFlips, setLimitFlips] = useState<boolean>(false);
 
-  const flipLimits = {
-    easy: 24,
-    medium: 36,
-    hard: 60,
-    hell: 70,
-  };
-
-  const themesMap = useMemo(() => {
-    const files = import.meta.glob(
-      "/src/assets/Illustration/**/*.{png,jpg,jpeg,webp,svg}",
-      {
-        eager: true,
-        query: "?url",
-        import: "default",
-      }
-    ) as Record<string, string>;
-    const map: Record<string, { back?: string; cards: string[] }> = {};
-    for (const fullPath in files) {
-      const url = files[fullPath];
-      const parts = fullPath.split("/");
-      const idx = parts.indexOf("Illustration");
-      if (idx === -1 || idx + 1 >= parts.length) continue;
-      const themeName = parts[idx + 1];
-      const fileName = parts[parts.length - 1];
-      if (!map[themeName]) map[themeName] = { cards: [] };
-      if (/^back\.(png|jpg|jpeg|webp|svg)$/i.test(fileName)) {
-        map[themeName].back = url;
-      } else {
-        map[themeName].cards.push(url);
-      }
-    }
-    return map;
-  }, []);
+  const themesMap = useThemes();
 
   const themeNames = useMemo<string[]>(
     () => Object.keys(themesMap).sort(),
@@ -79,11 +47,9 @@ function Start() {
             <label className="block">
               <span className="text-sm opacity-90">Difficulty</span>
               <div className="mt-1">
-                <Select
+                  <Select
                   value={difficulty}
-                  onValueChange={(v) =>
-                    setDifficulty(v as "easy" | "medium" | "hard" | "hell")
-                  }
+                  onValueChange={(v) => setDifficulty(v as Difficulty)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select difficulty" />
@@ -128,10 +94,10 @@ function Start() {
                 <label htmlFor="flip-limit" className="text-sm">
                   Limit flip count
                 </label>
-                <p className="opacity-90 text-sm">
+                <p className="opacity-90 text-sm h-4">
                   {limitFlips && (
                     <span className="block text-xs opacity-70 mt-0.5">
-                      Max {flipLimits[difficulty]} flips
+                      Max {getFlipLimit(difficulty)} flips
                     </span>
                   )}
                 </p>

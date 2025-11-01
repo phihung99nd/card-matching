@@ -1,6 +1,14 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import {
+  type Difficulty,
+  getGridSize,
+  getTimeLimit,
+  getFlipLimit,
+} from "../lib/gameConstants";
+import { useThemes } from "../lib/themeUtils";
+import { CircularProgress } from "../components/ui/circular-progress";
 
 type Card = {
   id: number;
@@ -9,20 +17,11 @@ type Card = {
   matched: boolean;
 };
 
-type Difficulty = "easy" | "medium" | "hard" | "hell";
-
 type StartState = {
   difficulty?: Difficulty;
   imageSet?: string;
   limitFlips?: boolean;
 };
-
-function useGridSize(difficulty: Difficulty) {
-  if (difficulty === "easy") return { cols: 4, rows: 3 }; // 12 cards
-  if (difficulty === "medium") return { cols: 6, rows: 3 }; // 18 cards
-  if (difficulty === "hard") return { cols: 6, rows: 4 }; // 24 cards
-  return { cols: 7, rows: 4 }; // 28 cards
-}
 
 function Game() {
   const navigate = useNavigate();
@@ -30,54 +29,17 @@ function Game() {
   const difficulty = (location.state?.difficulty ?? "easy") as Difficulty;
   const imageSet = (location.state?.imageSet ?? "emoji") as string;
   const limitFlips = location.state?.limitFlips ?? false;
-  const { cols, rows } = useGridSize(difficulty);
-
-  const flipLimits = {
-    easy: 24,
-    medium: 36,
-    hard: 60,
-    hell: 70,
-  };
-  const maxFlips = limitFlips ? flipLimits[difficulty] : Infinity;
+  const { cols, rows } = getGridSize(difficulty);
+  const maxFlips = limitFlips ? getFlipLimit(difficulty) : Infinity;
 
   // Load theme images from /src/assets/Illustration/<theme>
-  const themes = useMemo(() => {
-    const files = import.meta.glob(
-      "/src/assets/Illustration/**/*.{png,jpg,jpeg,webp,svg}",
-      {
-        eager: true,
-        query: "?url",
-        import: "default",
-      }
-    ) as Record<string, string>;
-    const map: Record<string, { back?: string; cards: string[] }> = {};
-    for (const fullPath in files) {
-      const url = files[fullPath];
-      const parts = fullPath.split("/");
-      const idx = parts.indexOf("Illustration");
-      if (idx === -1 || idx + 1 >= parts.length) continue;
-      const themeName = parts[idx + 1];
-      const fileName = parts[parts.length - 1];
-      if (!map[themeName]) map[themeName] = { cards: [] };
-      if (/^back\.(png|jpg|jpeg|webp|svg)$/i.test(fileName)) {
-        map[themeName].back = url;
-      } else {
-        map[themeName].cards.push(url);
-      }
-    }
-    return map;
-  }, []);
+  const themes = useThemes();
 
   const [cards, setCards] = useState<Card[]>([]);
   const [, setSelectedIds] = useState<number[]>([]);
   const [flipCount, setFlipCount] = useState(0);
   const [lastMatched, setLastMatched] = useState<number[]>([]);
-  const [timeLeft, setTimeLeft] = useState(() => {
-    if (difficulty === "easy") return 30;
-    if (difficulty === "medium") return 60;
-    if (difficulty === "hard") return 90;
-    return 120;
-  });
+  const [timeLeft, setTimeLeft] = useState(() => getTimeLimit(difficulty));
   const timerRef = useRef<number | null>(null);
 
   // Compute a card size that fits the viewport without scrolling
@@ -106,16 +68,35 @@ function Game() {
       const size = Math.max(36, Math.min(sizeByW, sizeByH));
       setCardSize(size);
     }
+
+    // Initial calculation
     computeSize();
-    window.addEventListener("resize", computeSize);
-    return () => window.removeEventListener("resize", computeSize);
+
+    // Debounce resize handler for better performance
+    let timeoutId: number | undefined;
+    const handleResize = () => {
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
+      timeoutId = window.setTimeout(() => {
+        computeSize();
+      }, 100);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, [cols, rows]);
 
   const buildPool = useCallback(
     (kind: string, needed: number): string[] => {
       const theme = themes[kind];
       let pool: string[] = [];
-      
+
       if (theme && theme.cards.length > 0) {
         pool = theme.cards.filter(Boolean);
         // If we need more cards than available, repeat the pool
@@ -207,7 +188,7 @@ function Game() {
           pool = pool.concat(pool).slice(0, needed);
         }
       }
-      
+
       // Shuffle the pool randomly
       const shuffled = [...pool].sort(() => Math.random() - 0.5);
       // Return the first N items needed
@@ -253,14 +234,7 @@ function Game() {
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
-      const totalTime =
-        difficulty === "easy"
-          ? 30
-          : difficulty === "medium"
-          ? 60
-          : difficulty === "hard"
-          ? 90
-          : 120;
+      const totalTime = getTimeLimit(difficulty);
       navigate("/result", {
         state: {
           win: true,
@@ -288,14 +262,7 @@ function Game() {
           state: {
             win: false,
             flips: flipCount,
-            timeTaken:
-              difficulty === "easy"
-                ? 30
-                : difficulty === "medium"
-                ? 60
-                : difficulty === "hard"
-                ? 90
-                : 120,
+            timeTaken: getTimeLimit(difficulty),
             difficulty,
             imageSet,
             limitFlips,
@@ -316,14 +283,7 @@ function Game() {
           clearInterval(timerRef.current);
           timerRef.current = null;
         }
-        const totalTime =
-          difficulty === "easy"
-            ? 30
-            : difficulty === "medium"
-            ? 60
-            : difficulty === "hard"
-            ? 90
-            : 120;
+        const totalTime = getTimeLimit(difficulty);
         navigate("/result", {
           state: {
             win: false,
@@ -357,14 +317,7 @@ function Game() {
           clearInterval(timerRef.current);
           timerRef.current = null;
         }
-        const totalTime =
-          difficulty === "easy"
-            ? 30
-            : difficulty === "medium"
-            ? 60
-            : difficulty === "hard"
-            ? 90
-            : 120;
+        const totalTime = getTimeLimit(difficulty);
         navigate("/result", {
           state: {
             win: false,
@@ -420,11 +373,19 @@ function Game() {
 
   return (
     <div
-      className="mx-auto px-4 min-h-screen flex flex-col"
+      className="mx-auto px-4 min-h-[calc(100vh-100px)] flex flex-col"
       style={{ maxWidth: "100%" }}
     >
-      <div className="flex items-center justify-between mb-4">
-        <div className="font-semibold">Time: {timeLeft}s</div>
+      <div className="flex items-center justify-center gap-8 mb-4">
+        <div className="flex items-center gap-3">
+          <div className="font-semibold">Time:</div>
+          <CircularProgress
+            value={timeLeft}
+            max={getTimeLimit(difficulty)}
+            size={72}
+            strokeWidth={6}
+          />
+        </div>
         <div className="font-semibold">
           Flips: {flipCount}
           {limitFlips && <span className="opacity-70"> / {maxFlips}</span>}

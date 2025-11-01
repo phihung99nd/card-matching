@@ -14,6 +14,7 @@ type Difficulty = 'easy' | 'medium' | 'hard' | 'hell'
 type StartState = {
 	difficulty?: Difficulty
 	imageSet?: string
+	limitFlips?: boolean
 }
 
 function useGridSize(difficulty: Difficulty) {
@@ -28,7 +29,16 @@ function Game() {
 	const location = useLocation() as { state?: StartState }
 	const difficulty = (location.state?.difficulty ?? 'easy') as Difficulty
 	const imageSet = (location.state?.imageSet ?? 'emoji') as string
+	const limitFlips = location.state?.limitFlips ?? false
 	const { cols, rows } = useGridSize(difficulty)
+
+	const flipLimits = {
+		easy: 24,
+		medium: 36,
+		hard: 60,
+		hell: 70,
+	}
+	const maxFlips = limitFlips ? flipLimits[difficulty] : Infinity
 
 	// Load theme images from /src/assets/Illustration/<theme>
 	const themes = useMemo(() => {
@@ -135,26 +145,65 @@ function Game() {
 		}
 	}, [])
 
+	// Win condition - check this first before any lose conditions
 	useEffect(() => {
-		if (timeLeft <= 0) {
+		if (cards.length > 0 && cards.every((c) => c.matched)) {
 			if (timerRef.current != null) {
 				clearInterval(timerRef.current)
 				timerRef.current = null
 			}
-			navigate('/result', { state: { win: false, flips: flipCount, timeTaken: 0 } })
-		}
-	}, [timeLeft, flipCount, navigate])
-
-	useEffect(() => {
-		if (cards.length > 0 && cards.every((c) => c.matched)) {
 			const totalTime = difficulty === 'easy' ? 30 : difficulty === 'medium' ? 60 : difficulty === 'hard' ? 90 : 120
-			navigate('/result', { state: { win: true, flips: flipCount, timeTaken: totalTime - timeLeft } })
+			navigate('/result', { state: { win: true, flips: flipCount, timeTaken: totalTime - timeLeft, difficulty, imageSet, limitFlips, loseReason: null } })
 		}
-	}, [cards, timeLeft, flipCount, difficulty, navigate])
+	}, [cards, timeLeft, flipCount, difficulty, navigate, imageSet, limitFlips])
+
+	// Time up lose condition
+	useEffect(() => {
+		if (timeLeft <= 0) {
+			const allMatched = cards.length > 0 && cards.every((c) => c.matched)
+			if (!allMatched) {
+				if (timerRef.current != null) {
+					clearInterval(timerRef.current)
+					timerRef.current = null
+				}
+				navigate('/result', { state: { win: false, flips: flipCount, timeTaken: difficulty === 'easy' ? 30 : difficulty === 'medium' ? 60 : difficulty === 'hard' ? 90 : 120, difficulty, imageSet, limitFlips, loseReason: 'time' } })
+			}
+		}
+	}, [timeLeft, flipCount, navigate, difficulty, imageSet, limitFlips, cards])
+
+	// Flip limit lose condition - only check if limit is enabled and exceeded
+	useEffect(() => {
+		if (limitFlips && flipCount > maxFlips) {
+			const allMatched = cards.length > 0 && cards.every((c) => c.matched)
+			if (!allMatched) {
+				// Flip limit exceeded and game not won - lose immediately
+				if (timerRef.current != null) {
+					clearInterval(timerRef.current)
+					timerRef.current = null
+				}
+				const totalTime = difficulty === 'easy' ? 30 : difficulty === 'medium' ? 60 : difficulty === 'hard' ? 90 : 120
+				navigate('/result', { state: { win: false, flips: flipCount, timeTaken: totalTime - timeLeft, difficulty, imageSet, limitFlips, loseReason: 'flips' } })
+			}
+		}
+	}, [flipCount, limitFlips, maxFlips, cards, timeLeft, difficulty, navigate, imageSet])
 
 	function flip(cardId: number) {
+		// If flip limit is reached and user tries to flip, end the game immediately
+		if (limitFlips && flipCount >= maxFlips) {
+			const allMatched = cards.length > 0 && cards.every((c) => c.matched)
+			if (!allMatched) {
+				if (timerRef.current != null) {
+					clearInterval(timerRef.current)
+					timerRef.current = null
+				}
+				const totalTime = difficulty === 'easy' ? 30 : difficulty === 'medium' ? 60 : difficulty === 'hard' ? 90 : 120
+				navigate('/result', { state: { win: false, flips: flipCount, timeTaken: totalTime - timeLeft, difficulty, imageSet, limitFlips, loseReason: 'flips' } })
+			}
+			return
+		}
+		const newFlipCount = flipCount + 1
 		setCards((prev) => prev.map((c) => (c.id === cardId ? { ...c, flipped: true } : c)))
-		setFlipCount((n) => n + 1)
+		setFlipCount(newFlipCount)
 		setSelectedIds((sel) => {
 			const next = [...sel, cardId]
 			if (next.length === 2) {
@@ -185,7 +234,12 @@ function Game() {
 		<div className="mx-auto px-4 min-h-screen flex flex-col" style={{ maxWidth: '100%' }}>
 			<div className="flex items-center justify-between mb-4">
 				<div className="font-semibold">Time: {timeLeft}s</div>
-				<div className="font-semibold">Flips: {flipCount}</div>
+				<div className="font-semibold">
+					Flips: {flipCount}
+					{limitFlips && (
+						<span className="opacity-70"> / {maxFlips}</span>
+					)}
+				</div>
 			</div>
 			<div className="flex-1 flex items-center justify-center">
 				<div

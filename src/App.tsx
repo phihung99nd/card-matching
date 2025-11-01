@@ -9,8 +9,8 @@ function App() {
     <BrowserRouter>
       <div className="min-h-screen bg-linear-to-b from-slate-950 via-slate-900 to-slate-800 text-white">
         <header className="px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="font-extrabold tracking-tight text-xl sm:text-2xl">
-            Flip Fiesta
+          <Link to="/" className="font-extrabold tracking-tight text-xl sm:text-2xl font-asphalt">
+            Flip Frenzy
           </Link>
           <nav className="text-sm sm:text-base">
             <Link className="hover:opacity-90" to="/">Start</Link>

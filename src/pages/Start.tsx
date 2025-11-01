@@ -8,6 +8,7 @@ import {
   SelectItem,
 } from "../components/ui/select";
 import { Checkbox } from "../components/ui/checkbox";
+import { Skeleton } from "../components/ui/skeleton";
 import { type Difficulty, getFlipLimit } from "../lib/gameConstants";
 import { useCardThemes } from "../lib/themeUtils";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -17,9 +18,18 @@ function Start() {
   const [difficulty, setDifficulty] = useState<Difficulty>("easy");
   const [imageSet, setImageSet] = useState<string>("emoji");
   const [limitFlips, setLimitFlips] = useState<boolean>(false);
+  const [backImageLoading, setBackImageLoading] = useState(true);
+  const [cardImageLoading, setCardImageLoading] = useState(true);
 
   const { theme } = useTheme();
   const themesMap = useCardThemes();
+
+  // Reset loading states when imageSet changes
+  const handleImageSetChange = (newImageSet: string) => {
+    setImageSet(newImageSet);
+    setBackImageLoading(true);
+    setCardImageLoading(true);
+  };
 
   const themeNames = useMemo<string[]>(
     () => Object.keys(themesMap).sort(),
@@ -69,7 +79,7 @@ function Start() {
             <label className="block">
               <span className="text-sm text-muted-foreground">Image set</span>
               <div className="mt-1">
-                <Select value={imageSet} onValueChange={setImageSet}>
+                <Select value={imageSet} onValueChange={handleImageSetChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select image set" />
                   </SelectTrigger>
@@ -135,15 +145,25 @@ function Start() {
                     <span className="text-xs text-muted-foreground mb-1 text-center">
                       Card Back
                     </span>
-                    <div className="flex items-center justify-center overflow-hidden rounded bg-muted/30 aspect-[3/4] group cursor-pointer">
+                    <div className="relative flex items-center justify-center overflow-hidden rounded bg-muted/30 aspect-[3/4] group cursor-pointer">
+                      {backImageLoading && (
+                        <Skeleton className="absolute inset-0 w-full h-full" />
+                      )}
                       {themesMap[imageSet]?.back ? (
                         <img
                           src={themesMap[imageSet].back}
                           alt="card back"
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                          loading="lazy"
+                          onLoad={() => setBackImageLoading(false)}
+                          onError={() => setBackImageLoading(false)}
+                          className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-110 ${
+                            backImageLoading ? "opacity-0" : "opacity-100"
+                          } transition-opacity duration-300`}
                         />
                       ) : (
-                        <span className="text-sm text-muted-foreground">No back</span>
+                        <span className={`text-sm text-muted-foreground ${
+                          backImageLoading ? "opacity-0" : "opacity-100"
+                        }`}>No back</span>
                       )}
                     </div>
                   </div>
@@ -151,15 +171,25 @@ function Start() {
                     <span className="text-xs opacity-70 mb-1 text-center">
                       Card Face
                     </span>
-                    <div className="flex items-center justify-center overflow-hidden rounded bg-muted/30 aspect-[3/4] group cursor-pointer">
+                    <div className="relative flex items-center justify-center overflow-hidden rounded bg-muted/30 aspect-[3/4] group cursor-pointer">
+                      {cardImageLoading && (
+                        <Skeleton className="absolute inset-0 w-full h-full" />
+                      )}
                       {themesMap[imageSet]?.cards?.[0] ? (
                         <img
                           src={themesMap[imageSet].cards[0]}
                           alt="card preview"
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                          loading="lazy"
+                          onLoad={() => setCardImageLoading(false)}
+                          onError={() => setCardImageLoading(false)}
+                          className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-110 ${
+                            cardImageLoading ? "opacity-0" : "opacity-100"
+                          } transition-opacity duration-300`}
                         />
                       ) : (
-                        <span className="text-sm text-muted-foreground">No card</span>
+                        <span className={`text-sm text-muted-foreground ${
+                          cardImageLoading ? "opacity-0" : "opacity-100"
+                        }`}>No card</span>
                       )}
                     </div>
                   </div>

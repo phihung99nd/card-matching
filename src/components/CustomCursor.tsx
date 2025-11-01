@@ -59,7 +59,7 @@ export function CustomCursor({ cursorImage, pointerImage }: CustomCursorProps) {
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          className="fixed drop-shadow-md drop-shadow-black/50 pointer-events-none z-[9999]"
+          className="fixed drop-shadow-md drop-shadow-black/50 pointer-events-none z-9999"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

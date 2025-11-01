@@ -137,4 +137,9 @@
   body {
     @apply bg-background text-foreground font-poppins;
   }
+  
+  /* Hide default cursor - using custom cursor component instead */
+  * {
+    cursor: none !important;
+  }
 }

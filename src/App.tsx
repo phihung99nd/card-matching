@@ -3,10 +3,12 @@ import './index.css'
 import Start from '@/pages/Start'
 import Game from '@/pages/Game'
 import Result from '@/pages/Result'
+import { CustomCursor } from '@/components/CustomCursor'
 
 function App() {
   return (
     <BrowserRouter>
+      <CustomCursor cursorImage='/cursor/glazed.png' pointerImage='/cursor/glazed-pointer.png'/>
       <div className="min-h-screen bg-linear-to-b from-slate-950 via-slate-900 to-slate-800 text-white">
         <header className="px-6 py-4 flex items-center justify-between">
           <Link to="/" className="font-extrabold tracking-tight text-xl sm:text-2xl font-asphalt">

@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -119,6 +119,212 @@ function ShimmerOverlay() {
   );
 }
 
+// Helper function to generate uniformly distributed sparkle positions
+function generateSparklePositions() {
+  const gridCols = 5; // Number of columns in the grid
+  const gridRows = 5; // Number of rows in the grid
+  const extraSparkles = Math.floor(Math.random() * 3); // 0-2 extra sparkles
+  
+  const sparkles: Array<{
+    id: number;
+    x: number;
+    y: number;
+    delay: number;
+    duration: number;
+  }> = [];
+  
+  let sparkleId = 0;
+  
+  // First, place one sparkle in each grid cell for uniform distribution
+  for (let row = 0; row < gridRows; row++) {
+    for (let col = 0; col < gridCols; col++) {
+      // Calculate grid cell boundaries (with padding to avoid edges)
+      const cellPadding = 5; // 5% padding from edges
+      const cellWidth = (100 - cellPadding * 2) / gridCols;
+      const cellHeight = (100 - cellPadding * 2) / gridRows;
+      
+      const cellStartX = cellPadding + col * cellWidth;
+      const cellStartY = cellPadding + row * cellHeight;
+      
+      // Random position within the cell with some margin
+      const margin = 20; // 8% margin from cell edges
+      const x = cellStartX + margin + Math.random() * (cellWidth - margin * 2);
+      const y = cellStartY + margin + Math.random() * (cellHeight - margin * 2);
+      
+      sparkles.push({
+        id: sparkleId++,
+        x: Math.max(10, Math.min(90, x)), // Clamp between 5% and 95%
+        y: Math.max(10, Math.min(90, y)), // Clamp between 5% and 95%
+        delay: Math.random() * 2,
+        duration: 1.5 + Math.random() * 1.5,
+      });
+    }
+  }
+  
+  // Add extra sparkles randomly across the entire card
+  for (let i = 0; i < extraSparkles; i++) {
+    sparkles.push({
+      id: sparkleId++,
+      x: 10 + Math.random() * 80, // 10% to 90% (avoid edges)
+      y: 10 + Math.random() * 80,
+      delay: Math.random() * 2,
+      duration: 1 + Math.random() * 1.5,
+    });
+  }
+  
+  return sparkles;
+}
+
+// Sparkle heart effect component with pink hearts
+function SparkleStar() {
+  const [sparkles, setSparkles] = useState<Array<{
+    id: number;
+    x: number;
+    y: number;
+    delay: number;
+    duration: number;
+  }>>([]);
+
+  useEffect(() => {
+    setSparkles(generateSparklePositions());
+  }, []);
+
+  return (
+    <>
+      <style>{`
+        @keyframes sparkle {
+          0%, 100% {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0);
+          }
+          50% {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1.5);
+          }
+        }
+        .sparkle-heart {
+          position: absolute;
+          width: 18px;
+          height: 18px;
+          pointer-events: none;
+        }
+        .sparkle-heart::before,
+        .sparkle-heart::after {
+          content: '✧';
+          position: absolute;
+          opacity: 0,
+          font-size: 18px;
+          color:rgb(255, 255, 255);
+          line-height: 1;
+          text-shadow: 0 0 4px rgba(255, 255, 255, 0.8), 0 0 8px rgba(207, 207, 207, 0.8);
+          transform-origin: center;
+        }
+        .sparkle-heart::before {
+          left: 50%;
+          top: 0;
+          transform: translateX(-50%);
+        }
+        .sparkle-heart::after {
+          display: none;
+        }
+      `}</style>
+      <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-lg z-20">
+        {sparkles.map((sparkle) => (
+          <div
+            key={sparkle.id}
+            className="sparkle-heart"
+            style={{
+              left: `${sparkle.x}%`,
+              top: `${sparkle.y}%`,
+              animation: `sparkle ${sparkle.duration}s ease-in-out infinite`,
+              animationDelay: `${sparkle.delay}s`,
+            }}
+          />
+        ))}
+      </div>
+    </>
+  );
+}
+
+// Sparkle heart effect component with pink hearts
+function SparkleHeart() {
+  const [sparkles, setSparkles] = useState<Array<{
+    id: number;
+    x: number;
+    y: number;
+    delay: number;
+    duration: number;
+  }>>([]);
+
+  useEffect(() => {
+    setSparkles(generateSparklePositions());
+  }, []);
+
+  return (
+    <>
+      <style>{`
+        @keyframes sparkle-heart {
+          0% {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0);
+          }
+          40% {
+            opacity: 1;
+            transform: translate(-50%, -150%) scale(1.5);
+          }
+          80% {
+            opacity: 1;
+            transform: translate(-50%, -200%) scale(1.5);
+          }
+          100% {
+            opacity: 0;
+            transform: translate(-50%, -250%) scale(0);
+          }
+        }
+        .sparkle-heart {
+          position: absolute;
+          width: 18px;
+          height: 18px;
+          pointer-events: none;
+        }
+        .sparkle-heart::before,
+        .sparkle-heart::after {
+          content: '♡';
+          position: absolute;
+          opacity: 0,
+          font-size: 18px;
+          color: #ff69b4;
+          line-height: 1;
+          text-shadow: 0 0 4px rgba(255, 105, 180, 0.8), 0 0 8px rgba(255, 182, 193, 0.8);
+          transform-origin: center;
+        }
+        .sparkle-heart::before {
+          left: 50%;
+          top: 0;
+          transform: translateX(-50%);
+        }
+        .sparkle-heart::after {
+          display: none;
+        }
+      `}</style>
+      <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-lg z-20">
+        {sparkles.map((sparkle) => (
+          <div
+            key={sparkle.id}
+            className="sparkle-heart"
+            style={{
+              left: `${sparkle.x}%`,
+              top: `${sparkle.y}%`,
+              animation: `sparkle-heart ${sparkle.duration}s ease-in-out infinite`,
+              animationDelay: `${sparkle.delay}s`,
+            }}
+          />
+        ))}
+      </div>
+    </>
+  );
+}
+
 // Interactive card component with hover tilt and float effect
 function InteractiveCard({
   card,
@@ -136,6 +342,9 @@ function InteractiveCard({
   const cardRef = useRef<HTMLDivElement>(null);
   const [transform, setTransform] = useState({ rotateX: 0, rotateY: 0, translateZ: 0 });
   const [isHovering, setIsHovering] = useState(false);
+  
+  // Randomly select foil type (star or heart) - stays consistent for this card instance
+  const foilType = useMemo(() => Math.random() < 0.5 ? 'star' : 'heart', []);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
@@ -192,6 +401,7 @@ function InteractiveCard({
       ) : (
         <div className="relative flex items-center justify-center overflow-hidden rounded-lg bg-muted/30 shadow-xl w-[320px] h-[427px] sm:w-[400px] sm:h-[533px] md:w-[500px] md:h-[667px] lg:w-[600px] lg:h-[800px]">
           <ShimmerOverlay />
+          {foilType === 'star' ? <SparkleStar /> : <SparkleHeart />}
           {isLoading && (
             <Skeleton className="absolute inset-0 w-full h-full z-0" />
           )}

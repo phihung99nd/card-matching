@@ -35,6 +35,9 @@ function GameCard({
   lastMatched,
   theme,
   onFlip,
+  onMediaLoad,
+  onMediaError,
+  isGameReady,
 }: {
   card: Card;
   cardSize: number;
@@ -42,8 +45,12 @@ function GameCard({
   lastMatched: number[];
   theme: string;
   onFlip: () => void;
+  onMediaLoad: () => void;
+  onMediaError: () => void;
+  isGameReady: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const hasLoadedRef = useRef(false);
   
   // Control video playback based on card state
   useEffect(() => {
@@ -59,11 +66,20 @@ function GameCard({
     }
   }, [card.flipped, card.matched, card.isVideo]);
   
+  // Mark emoji cards as loaded immediately (no media to load)
+  useEffect(() => {
+    if (!card.value.includes("/") && !hasLoadedRef.current) {
+      hasLoadedRef.current = true;
+      onMediaLoad();
+    }
+  }, [card.value, onMediaLoad]);
+  
   return (
     <motion.button
       whileTap={{ scale: 0.98 }}
-      onClick={() => !card.flipped && !card.matched && onFlip()}
-      className={`relative ${card.matched ? "opacity-60" : ""}`}
+      onClick={() => isGameReady && !card.flipped && !card.matched && onFlip()}
+      disabled={!isGameReady}
+      className={`relative ${card.matched ? "opacity-60" : ""} ${!isGameReady ? "cursor-wait" : ""}`}
       style={{ perspective: "1000px" }}
     >
       {/* Matched bounce + pop flash */}
@@ -125,12 +141,36 @@ function GameCard({
             loop
             muted
             playsInline
+            onLoadedData={() => {
+              if (!hasLoadedRef.current) {
+                hasLoadedRef.current = true;
+                onMediaLoad();
+              }
+            }}
+            onError={() => {
+              if (!hasLoadedRef.current) {
+                hasLoadedRef.current = true;
+                onMediaError();
+              }
+            }}
             className="w-full h-full object-cover object-center rounded"
           />
         ) : card.value.includes("/") ? (
           <img
             src={card.value}
             alt="card"
+            onLoad={() => {
+              if (!hasLoadedRef.current) {
+                hasLoadedRef.current = true;
+                onMediaLoad();
+              }
+            }}
+            onError={() => {
+              if (!hasLoadedRef.current) {
+                hasLoadedRef.current = true;
+                onMediaError();
+              }
+            }}
             className="w-full h-full object-cover object-center rounded"
           />
         ) : (
@@ -172,6 +212,11 @@ function Game() {
   const [lastMatched, setLastMatched] = useState<number[]>([]);
   const [timeLeft, setTimeLeft] = useState(() => getTimeLimit(difficulty));
   const timerRef = useRef<number | null>(null);
+  
+  // Track loading state for all cards
+  const [loadedCards, setLoadedCards] = useState<Set<number>>(new Set());
+  const [errorCards, setErrorCards] = useState<Set<number>>(new Set());
+  const isGameReady = cards.length > 0 && loadedCards.size + errorCards.size === cards.length;
 
   // Compute a card size that fits the viewport without scrolling
   const [cardSize, setCardSize] = useState<number>(64);
@@ -246,20 +291,38 @@ function Game() {
           isSecret: card.isSecret 
         }));
         
-        // Calculate how many secret cards to include (approximately 5% of needed)
-        const secretCount = Math.max(0, Math.floor(needed * 0.5));
+        // Build pool with 5% chance per card slot to be secret
+        // This ensures secret cards can appear even in small games
+        const availableRegular = [...regularPool];
+        const availableSecret = [...secretPool];
+        pool = [];
         
-        // Build pool with limited secret cards (5% chance regardless of lock status)
-        if (secretPool.length > 0 && secretCount > 0) {
-          // Shuffle secret cards and take up to secretCount
-          const shuffledSecrets = [...secretPool].sort(() => Math.random() - 0.5);
-          const selectedSecrets = shuffledSecrets.slice(0, Math.min(secretCount, secretPool.length));
-          pool = [...regularPool, ...selectedSecrets];
-        } else {
-          pool = regularPool;
+        // Select cards one by one with 20% chance for secret each time
+        for (let i = 0; i < needed; i++) {
+          const useSecret = Math.random() < 0.2 && availableSecret.length > 0;
+          
+          if (useSecret) {
+            // Pick a random secret card and remove it to ensure uniqueness
+            const randomIndex = Math.floor(Math.random() * availableSecret.length);
+            pool.push(availableSecret[randomIndex]);
+            availableSecret.splice(randomIndex, 1);
+          } else if (availableRegular.length > 0) {
+            // Pick a random regular card and remove it to ensure uniqueness
+            const randomIndex = Math.floor(Math.random() * availableRegular.length);
+            pool.push(availableRegular[randomIndex]);
+            availableRegular.splice(randomIndex, 1);
+          } else if (availableSecret.length > 0) {
+            // Fallback: if regular pool is exhausted, use secret cards
+            const randomIndex = Math.floor(Math.random() * availableSecret.length);
+            pool.push(availableSecret[randomIndex]);
+            availableSecret.splice(randomIndex, 1);
+          } else {
+            // Both pools exhausted - need to repeat
+            break;
+          }
         }
         
-        // If we need more cards than available, repeat the pool
+        // If we need more cards than available in unique pools, repeat the pool
         while (pool.length < needed && pool.length > 0) {
           pool = pool.concat(pool).slice(0, needed);
         }
@@ -374,10 +437,31 @@ function Game() {
     setCards(deck);
     setFlipCount(0);
     setSelectedIds([]);
+    // Reset loading state when deck changes
+    setLoadedCards(new Set());
+    setErrorCards(new Set());
   }, [cols, rows, imageSet, buildPool]);
+  
+  // Handle card media loading
+  const handleCardLoad = useCallback((cardId: number) => {
+    setLoadedCards((prev) => {
+      const next = new Set(prev);
+      next.add(cardId);
+      return next;
+    });
+  }, []);
+  
+  const handleCardError = useCallback((cardId: number) => {
+    setErrorCards((prev) => {
+      const next = new Set(prev);
+      next.add(cardId);
+      return next;
+    });
+  }, []);
 
+  // Start timer only when all cards are loaded
   useEffect(() => {
-    if (timerRef.current != null) return;
+    if (!isGameReady || timerRef.current != null) return;
     timerRef.current = window.setInterval(() => {
       setTimeLeft((s) => (s > 0 ? s - 1 : 0));
     }, 1000);
@@ -387,7 +471,7 @@ function Game() {
         timerRef.current = null;
       }
     };
-  }, []);
+  }, [isGameReady]);
 
   // Win condition - check this first before any lose conditions
   useEffect(() => {
@@ -539,7 +623,7 @@ function Game() {
 
   return (
     <div
-      className="mx-auto px-4 min-h-[calc(100vh-100px)] flex flex-col"
+      className="relative mx-auto px-4 min-h-[calc(100vh-100px)] flex flex-col"
       style={{ maxWidth: "100%" }}
     >
       <div className="flex items-center justify-center gap-8 mb-4">
@@ -557,6 +641,25 @@ function Game() {
           {limitFlips && <span className="text-muted-foreground"> / {maxFlips}</span>}
         </div>
       </div>
+      
+      {/* Loading overlay */}
+      {!isGameReady && cards.length > 0 && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="relative w-16 h-16">
+              <div className="absolute inset-0 border-4 border-primary/20 rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            </div>
+            <div className="text-lg font-semibold text-foreground">
+              Loading cards...
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {loadedCards.size + errorCards.size} / {cards.length} loaded
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="flex-1 flex items-center justify-center">
         <div
           className="grid gap-3"
@@ -571,6 +674,9 @@ function Game() {
               lastMatched={lastMatched}
               theme={theme}
               onFlip={() => flip(card.id)}
+              onMediaLoad={() => handleCardLoad(card.id)}
+              onMediaError={() => handleCardError(card.id)}
+              isGameReady={isGameReady}
             />
           ))}
         </div>

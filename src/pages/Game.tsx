@@ -6,6 +6,7 @@ import {
   getGridSize,
   getTimeLimit,
   getFlipLimit,
+  getSecretChance,
 } from "../lib/gameConstants";
 import { useCardThemes } from "../lib/themeUtils";
 import { CircularProgress } from "../components/ui/circular-progress";
@@ -80,19 +81,19 @@ function GameCard({
       whileTap={{ scale: 0.98 }}
       onClick={() => isGameReady && !card.flipped && !card.matched && onFlip()}
       disabled={!isGameReady}
-      className={`relative ${card.matched ? "opacity-60" : ""} ${!isGameReady ? "cursor-wait" : ""}`}
+      className={`relative ${card.matched ? "opacity-90" : ""} ${!isGameReady ? "cursor-wait" : ""}`}
       style={{ perspective: "1000px" }}
     >
       {/* Matched bounce + pop flash */}
       <motion.div
-        className={`absolute inset-0 rounded ring ring-border`}
+        className={`absolute inset-0 rounded ring-border ring-4`}
         initial={{ opacity: 0, scale: 1 }}
         animate={
           lastMatched.includes(card.id)
             ? {
                 scale: [1, 1.2, 1],
                 rotate: [0, -3, 3, 0],
-                opacity: [0, 1, 0],
+                opacity: [0, 1, 0.8],
               }
             : undefined
         }
@@ -202,6 +203,7 @@ function Game() {
   const limitFlips = location.state?.limitFlips ?? false;
   const { cols, rows } = getGridSize(difficulty);
   const maxFlips = limitFlips ? getFlipLimit(difficulty) : Infinity;
+  const secretChance = getSecretChance(difficulty);
 
   const { theme } = useTheme();
   // Load theme images from /src/assets/Illustration/<theme>
@@ -298,9 +300,10 @@ function Game() {
         const availableSecret = [...secretPool];
         pool = [];
         
-        // Select cards one by one with 20% chance for secret each time
+        // Select cards one by one with 10% chance for secret each time
         for (let i = 0; i < needed; i++) {
-          const useSecret = Math.random() < 0.2 && availableSecret.length > 0;
+          const secretRand = Math.random();
+          const useSecret = secretRand < secretChance && availableSecret.length > 0;
           
           if (useSecret) {
             // Pick a random secret card and remove it to ensure uniqueness
@@ -593,7 +596,7 @@ function Game() {
         if (a.value === b.value) {
           // If matched cards are secret, unlock them
           if (a.isSecret && b.isSecret) {
-            unlockSecretCard(a.value);
+            unlockSecretCard(a.value).catch(console.error);
           }
           setTimeout(() => {
             setCards((prev) =>

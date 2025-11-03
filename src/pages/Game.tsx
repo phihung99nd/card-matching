@@ -52,7 +52,7 @@ function GameCard({
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hasLoadedRef = useRef(false);
-  
+
   // Control video playback based on card state
   // Video plays when flipped and continues playing when matched
   useEffect(() => {
@@ -67,7 +67,7 @@ function GameCard({
       }
     }
   }, [card.flipped, card.matched, card.isVideo]);
-  
+
   // Mark emoji cards as loaded immediately (no media to load)
   useEffect(() => {
     if (!card.value.includes("/") && !hasLoadedRef.current) {
@@ -75,7 +75,7 @@ function GameCard({
       onMediaLoad();
     }
   }, [card.value, onMediaLoad]);
-  
+
   return (
     <motion.button
       whileTap={{ scale: 0.98 }}
@@ -91,22 +91,20 @@ function GameCard({
         animate={
           lastMatched.includes(card.id)
             ? {
-                scale: [1, 1.2, 1],
-                rotate: [0, -3, 3, 0],
-                opacity: [0, 1, 0.8],
-              }
+              scale: [1, 1.2, 1],
+              rotate: [0, -3, 3, 0],
+              opacity: [0, 1, 0.8],
+            }
             : undefined
         }
         transition={{ duration: 0.6, ease: "easeOut" }}
       />
       <motion.div
-        className={`absolute inset-0 rounded ring ${theme === "dark" ? "ring-white/50" : "ring-black/50"} shadow-md shadow-black/20 ${
-          backImageUrl
+        className={`absolute inset-0 rounded ring ${theme === "dark" ? "ring-white/50" : "ring-black/50"} shadow-md shadow-black/20 ${backImageUrl
             ? ""
-            : `bg-gradient-to-br ${
-              theme === "dark" ? "from-purple-500 via-violet-500 to-indigo-500" : "from-cyan-500 via-teal-500 to-green-500"
+            : `bg-gradient-to-br ${theme === "dark" ? "from-purple-500 via-violet-500 to-indigo-500" : "from-cyan-500 via-teal-500 to-green-500"
             }`
-        }`}
+          }`}
         initial={{ rotateY: card.flipped ? 180 : 0 }}
         animate={{ rotateY: card.flipped ? 180 : 0 }}
         transition={{ duration: 0.35, ease: "easeInOut" }}
@@ -143,6 +141,7 @@ function GameCard({
             loop
             muted
             playsInline
+            preload="metadata"
             onLoadedData={() => {
               if (!hasLoadedRef.current) {
                 hasLoadedRef.current = true;
@@ -215,7 +214,7 @@ function Game() {
   const [lastMatched, setLastMatched] = useState<number[]>([]);
   const [timeLeft, setTimeLeft] = useState(() => getTimeLimit(difficulty));
   const timerRef = useRef<number | null>(null);
-  
+
   // Track loading state for all cards
   const [loadedCards, setLoadedCards] = useState<Set<number>>(new Set());
   const [errorCards, setErrorCards] = useState<Set<number>>(new Set());
@@ -237,10 +236,10 @@ function Game() {
       const availableH = Math.max(
         200,
         window.innerHeight -
-          headerH -
-          controlsH -
-          verticalPadding -
-          gap * (rows - 1)
+        headerH -
+        controlsH -
+        verticalPadding -
+        gap * (rows - 1)
       );
       const sizeByW = Math.floor(availableW / cols);
       const sizeByH = Math.floor(availableH / rows / (4 / 3)); // account for 3:4 aspect
@@ -280,31 +279,31 @@ function Game() {
         // Separate regular cards and secret cards
         const regularCards = theme.cards.filter(card => !card.isSecret);
         const secretCards = theme.cards.filter(card => card.isSecret);
-        
+
         // Map to card objects - include ALL secret cards (both locked and unlocked)
         // so users have a chance to unlock them by matching
-        const regularPool = regularCards.map(card => ({ 
-          url: card.url, 
-          isVideo: card.isVideo, 
-          isSecret: card.isSecret 
+        const regularPool = regularCards.map(card => ({
+          url: card.url,
+          isVideo: card.isVideo,
+          isSecret: card.isSecret
         }));
-        const secretPool = secretCards.map(card => ({ 
-          url: card.url, 
-          isVideo: card.isVideo, 
-          isSecret: card.isSecret 
+        const secretPool = secretCards.map(card => ({
+          url: card.url,
+          isVideo: card.isVideo,
+          isSecret: card.isSecret
         }));
-        
+
         // Build pool with 5% chance per card slot to be secret
         // This ensures secret cards can appear even in small games
         const availableRegular = [...regularPool];
         const availableSecret = [...secretPool];
         pool = [];
-        
+
         // Select cards one by one with 10% chance for secret each time
         for (let i = 0; i < needed; i++) {
           const secretRand = Math.random();
           const useSecret = secretRand < secretChance && availableSecret.length > 0;
-          
+
           if (useSecret) {
             // Pick a random secret card and remove it to ensure uniqueness
             const randomIndex = Math.floor(Math.random() * availableSecret.length);
@@ -325,7 +324,7 @@ function Game() {
             break;
           }
         }
-        
+
         // If we need more cards than available in unique pools, repeat the pool
         while (pool.length < needed && pool.length > 0) {
           pool = pool.concat(pool).slice(0, needed);
@@ -445,7 +444,7 @@ function Game() {
     setLoadedCards(new Set());
     setErrorCards(new Set());
   }, [cols, rows, imageSet, buildPool]);
-  
+
   // Handle card media loading
   const handleCardLoad = useCallback((cardId: number) => {
     setLoadedCards((prev) => {
@@ -454,7 +453,7 @@ function Game() {
       return next;
     });
   }, []);
-  
+
   const handleCardError = useCallback((cardId: number) => {
     setErrorCards((prev) => {
       const next = new Set(prev);
@@ -645,7 +644,7 @@ function Game() {
           {limitFlips && <span className="text-muted-foreground"> / {maxFlips}</span>}
         </div>
       </div>
-      
+
       {/* Loading overlay */}
       {!isGameReady && cards.length > 0 && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
@@ -663,7 +662,7 @@ function Game() {
           </div>
         </div>
       )}
-      
+
       <div className="flex-1 flex items-center justify-center">
         <div
           className="grid gap-3"

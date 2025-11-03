@@ -83,7 +83,7 @@ function Start() {
                   <SelectTrigger>
                     <SelectValue placeholder="Select image set" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-[min(300px,50vh)]">
                     <SelectItem value="emoji">Emoji</SelectItem>
                     {themeNames.map((name) => (
                       <SelectItem key={name} value={name}>

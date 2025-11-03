@@ -250,83 +250,83 @@ function SparkleStar() {
 
 // Sparkle heart effect component with pink hearts
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function SparkleHeart() {
-  const [sparkles, setSparkles] = useState<Array<{
-    id: number;
-    x: number;
-    y: number;
-    delay: number;
-    duration: number;
-  }>>([]);
+// function SparkleHeart() {
+//   const [sparkles, setSparkles] = useState<Array<{
+//     id: number;
+//     x: number;
+//     y: number;
+//     delay: number;
+//     duration: number;
+//   }>>([]);
 
-  useEffect(() => {
-    setSparkles(generateSparklePositions());
-  }, []);
+//   useEffect(() => {
+//     setSparkles(generateSparklePositions());
+//   }, []);
 
-  return (
-    <>
-      <style>{`
-        @keyframes sparkle-heart {
-          0% {
-            opacity: 0;
-            transform: translate(-50%, -50%) scale(0);
-          }
-          40% {
-            opacity: 1;
-            transform: translate(-50%, -150%) scale(1.5);
-          }
-          80% {
-            opacity: 1;
-            transform: translate(-50%, -200%) scale(1.5);
-          }
-          100% {
-            opacity: 0;
-            transform: translate(-50%, -250%) scale(0);
-          }
-        }
-        .sparkle-heart {
-          position: absolute;
-          width: 18px;
-          height: 18px;
-          pointer-events: none;
-        }
-        .sparkle-heart::before,
-        .sparkle-heart::after {
-          content: '♡';
-          position: absolute;
-          opacity: 0,
-          font-size: 18px;
-          color: #ff69b4;
-          line-height: 1;
-          text-shadow: 0 0 4px rgba(255, 105, 180, 0.8), 0 0 8px rgba(255, 182, 193, 0.8);
-          transform-origin: center;
-        }
-        .sparkle-heart::before {
-          left: 50%;
-          top: 0;
-          transform: translateX(-50%);
-        }
-        .sparkle-heart::after {
-          display: none;
-        }
-      `}</style>
-      <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-lg z-20">
-        {sparkles.map((sparkle) => (
-          <div
-            key={sparkle.id}
-            className="sparkle-heart"
-            style={{
-              left: `${sparkle.x}%`,
-              top: `${sparkle.y}%`,
-              animation: `sparkle-heart ${sparkle.duration}s ease-in-out infinite`,
-              animationDelay: `${sparkle.delay}s`,
-            }}
-          />
-        ))}
-      </div>
-    </>
-  );
-}
+//   return (
+//     <>
+//       <style>{`
+//         @keyframes sparkle-heart {
+//           0% {
+//             opacity: 0;
+//             transform: translate(-50%, -50%) scale(0);
+//           }
+//           40% {
+//             opacity: 1;
+//             transform: translate(-50%, -150%) scale(1.5);
+//           }
+//           80% {
+//             opacity: 1;
+//             transform: translate(-50%, -200%) scale(1.5);
+//           }
+//           100% {
+//             opacity: 0;
+//             transform: translate(-50%, -250%) scale(0);
+//           }
+//         }
+//         .sparkle-heart {
+//           position: absolute;
+//           width: 18px;
+//           height: 18px;
+//           pointer-events: none;
+//         }
+//         .sparkle-heart::before,
+//         .sparkle-heart::after {
+//           content: '♡';
+//           position: absolute;
+//           opacity: 0,
+//           font-size: 18px;
+//           color: #ff69b4;
+//           line-height: 1;
+//           text-shadow: 0 0 4px rgba(255, 105, 180, 0.8), 0 0 8px rgba(255, 182, 193, 0.8);
+//           transform-origin: center;
+//         }
+//         .sparkle-heart::before {
+//           left: 50%;
+//           top: 0;
+//           transform: translateX(-50%);
+//         }
+//         .sparkle-heart::after {
+//           display: none;
+//         }
+//       `}</style>
+//       <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-lg z-20">
+//         {sparkles.map((sparkle) => (
+//           <div
+//             key={sparkle.id}
+//             className="sparkle-heart"
+//             style={{
+//               left: `${sparkle.x}%`,
+//               top: `${sparkle.y}%`,
+//               animation: `sparkle-heart ${sparkle.duration}s ease-in-out infinite`,
+//               animationDelay: `${sparkle.delay}s`,
+//             }}
+//           />
+//         ))}
+//       </div>
+//     </>
+//   );
+// }
 
 // Sparkle star effect component with white stars
 function SparkleSnowFlake() {

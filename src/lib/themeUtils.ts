@@ -83,8 +83,8 @@ export function useCardThemes(): ThemesMap {
         map[themeName] = { cards: [] };
       }
       
-      // Check if it's a SECRET video
-      const isSecret = /^SECRET\./i.test(fileName);
+      // Check if it's a SECRET video (matches SECRET, SECRET_2, SECRET_3, etc.)
+      const isSecret = /^SECRET(_\d+)?\./i.test(fileName);
       
       map[themeName].cards.push({
         url,

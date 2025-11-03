@@ -53,9 +53,10 @@ function GameCard({
   const hasLoadedRef = useRef(false);
   
   // Control video playback based on card state
+  // Video plays when flipped and continues playing when matched
   useEffect(() => {
     if (card.isVideo && videoRef.current) {
-      if (card.flipped && !card.matched) {
+      if (card.flipped || card.matched) {
         videoRef.current.play().catch(() => {
           // Ignore autoplay errors
         });

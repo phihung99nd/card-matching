@@ -10,12 +10,15 @@ import {
 import { useCardThemes } from "../lib/themeUtils";
 import { CircularProgress } from "../components/ui/circular-progress";
 import { useTheme } from "@/contexts/ThemeContext";
+import { unlockSecretCard } from "../lib/secretCardUtils";
 
 type Card = {
   id: number;
   value: string;
   flipped: boolean;
   matched: boolean;
+  isVideo?: boolean;
+  isSecret?: boolean;
 };
 
 type StartState = {
@@ -23,6 +26,132 @@ type StartState = {
   imageSet?: string;
   limitFlips?: boolean;
 };
+
+// Card component to handle video playback
+function GameCard({
+  card,
+  cardSize,
+  backImageUrl,
+  lastMatched,
+  theme,
+  onFlip,
+}: {
+  card: Card;
+  cardSize: number;
+  backImageUrl?: string;
+  lastMatched: number[];
+  theme: string;
+  onFlip: () => void;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  
+  // Control video playback based on card state
+  useEffect(() => {
+    if (card.isVideo && videoRef.current) {
+      if (card.flipped && !card.matched) {
+        videoRef.current.play().catch(() => {
+          // Ignore autoplay errors
+        });
+      } else {
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
+      }
+    }
+  }, [card.flipped, card.matched, card.isVideo]);
+  
+  return (
+    <motion.button
+      whileTap={{ scale: 0.98 }}
+      onClick={() => !card.flipped && !card.matched && onFlip()}
+      className={`relative ${card.matched ? "opacity-60" : ""}`}
+      style={{ perspective: "1000px" }}
+    >
+      {/* Matched bounce + pop flash */}
+      <motion.div
+        className={`absolute inset-0 rounded ring ring-border`}
+        initial={{ opacity: 0, scale: 1 }}
+        animate={
+          lastMatched.includes(card.id)
+            ? {
+                scale: [1, 1.2, 1],
+                rotate: [0, -3, 3, 0],
+                opacity: [0, 1, 0],
+              }
+            : undefined
+        }
+        transition={{ duration: 0.6, ease: "easeOut" }}
+      />
+      <motion.div
+        className={`absolute inset-0 rounded ring ${theme === "dark" ? "ring-white/50" : "ring-black/50"} shadow-md shadow-black/20 ${
+          backImageUrl
+            ? ""
+            : `bg-gradient-to-br ${
+              theme === "dark" ? "from-purple-500 via-violet-500 to-indigo-500" : "from-cyan-500 via-teal-500 to-green-500"
+            }`
+        }`}
+        initial={{ rotateY: card.flipped ? 180 : 0 }}
+        animate={{ rotateY: card.flipped ? 180 : 0 }}
+        transition={{ duration: 0.35, ease: "easeInOut" }}
+        style={{
+          backfaceVisibility: "hidden",
+          transformStyle: "preserve-3d",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundImage: backImageUrl
+            ? `url(${backImageUrl})`
+            : undefined,
+        }}
+      />
+      <motion.div
+        className={`absolute inset-0 flex items-center justify-center rounded ring ${theme === "dark" ? "ring-white/50" : "ring-black/50"} shadow-md shadow-black/20 bg-white text-slate-900 text-4xl`}
+        initial={{
+          rotateY: card.flipped ? 0 : -180,
+          scale: card.matched ? 0.9 : 1,
+        }}
+        animate={{
+          rotateY: card.flipped ? 0 : -180,
+          scale: card.matched ? 0.9 : 1,
+        }}
+        transition={{ duration: 0.35, ease: "easeInOut" }}
+        style={{
+          backfaceVisibility: "hidden",
+          transformStyle: "preserve-3d",
+        }}
+      >
+        {card.isVideo ? (
+          <video
+            ref={videoRef}
+            src={card.value}
+            loop
+            muted
+            playsInline
+            className="w-full h-full object-cover object-center rounded"
+          />
+        ) : card.value.includes("/") ? (
+          <img
+            src={card.value}
+            alt="card"
+            className="w-full h-full object-cover object-center rounded"
+          />
+        ) : (
+          card.value
+        )}
+        {card.isSecret && (
+          <div className="absolute top-2 right-2 bg-yellow-500/90 text-yellow-900 text-xs font-bold px-2 py-1 rounded shadow-lg z-10">
+            SECRET
+          </div>
+        )}
+      </motion.div>
+      {/* Size the card explicitly to avoid page scroll */}
+      <div
+        style={{
+          width: cardSize,
+          height: Math.round(cardSize * (4 / 3)),
+        }}
+      />
+    </motion.button>
+  );
+}
 
 function Game() {
   const navigate = useNavigate();
@@ -95,15 +224,44 @@ function Game() {
   }, [cols, rows]);
 
   const buildPool = useCallback(
-    (kind: string, needed: number): string[] => {
+    (kind: string, needed: number): Array<{ url: string; isVideo?: boolean; isSecret?: boolean }> => {
       const theme = themes[kind];
-      let pool: string[] = [];
+      let pool: Array<{ url: string; isVideo?: boolean; isSecret?: boolean }> = [];
 
       if (theme && theme.cards.length > 0) {
-        pool = theme.cards.filter(Boolean);
+        // Separate regular cards and secret cards
+        const regularCards = theme.cards.filter(card => !card.isSecret);
+        const secretCards = theme.cards.filter(card => card.isSecret);
+        
+        // Map to card objects - include ALL secret cards (both locked and unlocked)
+        // so users have a chance to unlock them by matching
+        const regularPool = regularCards.map(card => ({ 
+          url: card.url, 
+          isVideo: card.isVideo, 
+          isSecret: card.isSecret 
+        }));
+        const secretPool = secretCards.map(card => ({ 
+          url: card.url, 
+          isVideo: card.isVideo, 
+          isSecret: card.isSecret 
+        }));
+        
+        // Calculate how many secret cards to include (approximately 5% of needed)
+        const secretCount = Math.max(0, Math.floor(needed * 0.5));
+        
+        // Build pool with limited secret cards (5% chance regardless of lock status)
+        if (secretPool.length > 0 && secretCount > 0) {
+          // Shuffle secret cards and take up to secretCount
+          const shuffledSecrets = [...secretPool].sort(() => Math.random() - 0.5);
+          const selectedSecrets = shuffledSecrets.slice(0, Math.min(secretCount, secretPool.length));
+          pool = [...regularPool, ...selectedSecrets];
+        } else {
+          pool = regularPool;
+        }
+        
         // If we need more cards than available, repeat the pool
-        while (pool.length < needed && theme.cards.length > 0) {
-          pool = pool.concat(theme.cards).slice(0, needed);
+        while (pool.length < needed && pool.length > 0) {
+          pool = pool.concat(pool).slice(0, needed);
         }
       } else {
         const emoji = [
@@ -184,7 +342,7 @@ function Game() {
           "🥞",
           "🧇",
         ];
-        pool = [...new Set([...emoji])];
+        pool = [...new Set([...emoji])].map(emoji => ({ url: emoji }));
         // If we need more emojis than available, repeat the pool
         while (pool.length < needed) {
           pool = pool.concat(pool).slice(0, needed);
@@ -206,9 +364,11 @@ function Game() {
     const deck: Card[] = [...candidates, ...candidates]
       .map((v, idx) => ({
         id: idx + 1,
-        value: v,
+        value: v.url,
         flipped: false,
         matched: false,
+        isVideo: v.isVideo,
+        isSecret: v.isSecret,
       }))
       .sort(() => Math.random() - 0.5);
     setCards(deck);
@@ -346,6 +506,10 @@ function Game() {
         const a = cards.find((c) => c.id === aId)!;
         const b = cards.find((c) => c.id === bId)!;
         if (a.value === b.value) {
+          // If matched cards are secret, unlock them
+          if (a.isSecret && b.isSecret) {
+            unlockSecretCard(a.value);
+          }
           setTimeout(() => {
             setCards((prev) =>
               prev.map((c) =>
@@ -399,83 +563,15 @@ function Game() {
           style={{ gridTemplateColumns: `repeat(${cols}, ${cardSize}px)` }}
         >
           {cards.map((card) => (
-            <motion.button
+            <GameCard
               key={card.id}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => !card.flipped && !card.matched && flip(card.id)}
-              className={`relative ${card.matched ? "opacity-60" : ""}`}
-              style={{ perspective: "1000px" }}
-            >
-              {/* Matched bounce + pop flash */}
-              <motion.div
-                className={`absolute inset-0 rounded ring ring-border`}
-                initial={{ opacity: 0, scale: 1 }}
-                animate={
-                  lastMatched.includes(card.id)
-                    ? {
-                        scale: [1, 1.2, 1],
-                        rotate: [0, -3, 3, 0],
-                        opacity: [0, 1, 0],
-                      }
-                    : undefined
-                }
-                transition={{ duration: 0.6, ease: "easeOut" }}
-              />
-              <motion.div
-                className={`absolute inset-0 rounded ring ${theme === "dark" ? "ring-white/50" : "ring-black/50"} shadow-md shadow-black/20 ${
-                  backImageUrl
-                    ? ""
-                    : `bg-gradient-to-br ${
-                      theme === "dark" ? "from-purple-500 via-violet-500 to-indigo-500" : "from-cyan-500 via-teal-500 to-green-500"
-                    }`
-                }`}
-                initial={{ rotateY: card.flipped ? 180 : 0 }}
-                animate={{ rotateY: card.flipped ? 180 : 0 }}
-                transition={{ duration: 0.35, ease: "easeInOut" }}
-                style={{
-                  backfaceVisibility: "hidden",
-                  transformStyle: "preserve-3d",
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
-                  backgroundImage: backImageUrl
-                    ? `url(${backImageUrl})`
-                    : undefined,
-                }}
-              />
-              <motion.div
-                className={`absolute inset-0 flex items-center justify-center rounded ring ${theme === "dark" ? "ring-white/50" : "ring-black/50"} shadow-md shadow-black/20 bg-white text-slate-900 text-4xl`}
-                initial={{
-                  rotateY: card.flipped ? 0 : -180,
-                  scale: card.matched ? 0.9 : 1,
-                }}
-                animate={{
-                  rotateY: card.flipped ? 0 : -180,
-                  scale: card.matched ? 0.9 : 1,
-                }}
-                transition={{ duration: 0.35, ease: "easeInOut" }}
-                style={{
-                  backfaceVisibility: "hidden",
-                  transformStyle: "preserve-3d",
-                }}
-              >
-                {card.value.includes("/") ? (
-                  <img
-                    src={card.value}
-                    alt="card"
-                    className="w-full h-full object-cover object-center rounded"
-                  />
-                ) : (
-                  card.value
-                )}
-              </motion.div>
-              {/* Size the card explicitly to avoid page scroll */}
-              <div
-                style={{
-                  width: cardSize,
-                  height: Math.round(cardSize * (4 / 3)),
-                }}
-              />
-            </motion.button>
+              card={card}
+              cardSize={cardSize}
+              backImageUrl={backImageUrl}
+              lastMatched={lastMatched}
+              theme={theme}
+              onFlip={() => flip(card.id)}
+            />
           ))}
         </div>
       </div>

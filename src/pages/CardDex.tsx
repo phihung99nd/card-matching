@@ -7,6 +7,8 @@ import {
 } from "@/components/ui/dialog";
 import { useCardThemes } from "@/lib/themeUtils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { isSecretCardUnlocked } from "@/lib/secretCardUtils";
+import secretCardImage from "@/assets/secret_card.jpg";
 
 // Emoji list from Game.tsx
 const EMOJI_LIST = [
@@ -405,12 +407,16 @@ function SparkleSnowFlake() {
 function InteractiveCard({
   card,
   isEmoji,
+  isVideo,
+  isSecret,
   isLoading,
   onLoad,
   onError,
 }: {
   card: string;
   isEmoji: boolean;
+  isVideo?: boolean;
+  isSecret?: boolean;
   isLoading: boolean;
   onLoad: () => void;
   onError: () => void;
@@ -420,7 +426,8 @@ function InteractiveCard({
   const [isHovering, setIsHovering] = useState(false);
   
   // Randomly select foil type (star or heart) - stays consistent for this card instance
-  const foilType = useMemo(() => Math.random() < 0.5 ? 'star' : 'heart', []);
+  // const foilType = useMemo(() => Math.random() < 0.5 ? 'star' : 'heart', []);
+  const foilType = 'star';
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
@@ -481,15 +488,35 @@ function InteractiveCard({
           {isLoading && (
             <Skeleton className="absolute inset-0 w-full h-full z-0" />
           )}
-          <img
-            src={card}
-            alt="Card detail"
-            onLoad={onLoad}
-            onError={onError}
-            className={`relative z-10 w-full h-full object-cover rounded-lg transition-opacity duration-300 ${
-              isLoading ? "opacity-0" : "opacity-100"
-            }`}
-          />
+          {isVideo ? (
+            <video
+              src={card}
+              autoPlay
+              loop
+              muted
+              playsInline
+              onLoadedData={onLoad}
+              onError={onError}
+              className={`relative z-10 w-full h-full object-cover rounded-lg transition-opacity duration-300 ${
+                isLoading ? "opacity-0" : "opacity-100"
+              }`}
+            />
+          ) : (
+            <img
+              src={card}
+              alt="Card detail"
+              onLoad={onLoad}
+              onError={onError}
+              className={`relative z-10 w-full h-full object-cover rounded-lg transition-opacity duration-300 ${
+                isLoading ? "opacity-0" : "opacity-100"
+              }`}
+            />
+          )}
+          {isSecret && (
+            <div className="absolute top-4 right-4 bg-yellow-500/90 text-yellow-900 text-sm font-bold px-3 py-1.5 rounded shadow-lg z-20">
+              SECRET
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -499,13 +526,41 @@ function InteractiveCard({
 function CardDex() {
   const themesMap = useCardThemes();
   const [cardImageLoading, setCardImageLoading] = useState<Record<string, boolean>>({});
+  const [, setRefreshKey] = useState(0);
+  
+  // Listen for storage changes to refresh when cards are unlocked
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "unlockedSecretCards") {
+        setRefreshKey(prev => prev + 1);
+      }
+    };
+    
+    // Also listen for custom storage events (for same-tab updates)
+    const handleCustomStorageChange = () => {
+      setRefreshKey(prev => prev + 1);
+    };
+    
+    window.addEventListener("storage", handleStorageChange);
+    // Listen for custom events (we'll dispatch this from Game.tsx)
+    window.addEventListener("secretCardUnlocked", handleCustomStorageChange);
+    
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("secretCardUnlocked", handleCustomStorageChange);
+    };
+  }, []);
 
   const allCardSets = useMemo(() => {
-    const sets: Array<{ name: string; isEmoji: boolean; cards: string[] }> = [
+    const sets: Array<{ 
+      name: string; 
+      isEmoji: boolean; 
+      cards: Array<{ url: string; isVideo?: boolean; isSecret?: boolean }> 
+    }> = [
       {
         name: "emoji",
         isEmoji: true,
-        cards: [...new Set(EMOJI_LIST)],
+        cards: [...new Set(EMOJI_LIST)].map(emoji => ({ url: emoji })),
       },
     ];
 
@@ -517,7 +572,11 @@ function CardDex() {
         sets.push({
           name: themeName,
           isEmoji: false,
-          cards: themeData.cards,
+          cards: themeData.cards.map(card => ({
+            url: card.url,
+            isVideo: card.isVideo,
+            isSecret: card.isSecret,
+          })),
         });
       }
     }
@@ -558,11 +617,25 @@ function CardDex() {
             <TabsContent key={set.name} value={set.name} className="mt-0">
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                 {set.cards.map((card, index) => {
-                  const cardKey = `${set.name}-${index}-${card}`;
+                  const cardKey = `${set.name}-${index}-${card.url}`;
                   const isLoading = cardImageLoading[cardKey] === true;
+                  const isLocked = card.isSecret && !isSecretCardUnlocked(card.url);
                   
                   return (
                     <Dialog key={cardKey}>
+                      {isLocked ? (
+                        <div className="relative flex items-center justify-center overflow-hidden rounded-lg bg-muted/30 aspect-[3/4] cursor-not-allowed opacity-75">
+                          <img
+                            src={secretCardImage}
+                            alt="Locked Secret Card"
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute top-2 right-2 bg-gray-700/90 text-gray-300 text-xs font-bold px-2 py-1 rounded shadow-lg z-10">
+                            LOCKED
+                          </div>
+                        </div>
+                      ) : (
+                        <>
                       <DialogTrigger asChild>
                         <button
                           onClick={() => {
@@ -573,7 +646,7 @@ function CardDex() {
                           {set.isEmoji ? (
                             <div className="flex items-center justify-center overflow-hidden rounded-lg bg-muted aspect-[3/4] transition-transform duration-300 group-hover:scale-105">
                               <span className="text-4xl transition-transform duration-300 group-hover:scale-125">
-                                {card}
+                                {card.url}
                               </span>
                             </div>
                           ) : (
@@ -581,16 +654,36 @@ function CardDex() {
                               {isLoading && (
                                 <Skeleton className="absolute inset-0 w-full h-full" />
                               )}
-                              <img
-                                src={card}
-                                alt={`Card ${index + 1}`}
-                                loading="lazy"
-                                onLoad={() => handleImageLoad(cardKey)}
-                                onError={() => handleImageError(cardKey)}
-                                className={`w-full h-full object-cover transition-opacity duration-300 ${
-                                  isLoading ? "opacity-0" : "opacity-100"
-                                }`}
-                              />
+                              {card.isVideo ? (
+                                <video
+                                  src={card.url}
+                                  autoPlay
+                                  loop
+                                  muted
+                                  playsInline
+                                  onLoadedData={() => handleImageLoad(cardKey)}
+                                  onError={() => handleImageError(cardKey)}
+                                  className={`w-full h-full object-cover transition-opacity duration-300 ${
+                                    isLoading ? "opacity-0" : "opacity-100"
+                                  }`}
+                                />
+                              ) : (
+                                <img
+                                  src={card.url}
+                                  alt={`Card ${index + 1}`}
+                                  loading="lazy"
+                                  onLoad={() => handleImageLoad(cardKey)}
+                                  onError={() => handleImageError(cardKey)}
+                                  className={`w-full h-full object-cover transition-opacity duration-300 ${
+                                    isLoading ? "opacity-0" : "opacity-100"
+                                  }`}
+                                />
+                              )}
+                              {card.isSecret && (
+                                <div className="absolute top-2 right-2 bg-yellow-500/90 text-yellow-900 text-xs font-bold px-2 py-1 rounded shadow-lg z-10">
+                                  SECRET
+                                </div>
+                              )}
                             </div>
                           )}
                         </button>
@@ -601,14 +694,18 @@ function CardDex() {
                             {set.name} Card
                           </h2>
                           <InteractiveCard
-                            card={card}
+                            card={card.url}
                             isEmoji={set.isEmoji}
+                            isVideo={card.isVideo}
+                            isSecret={card.isSecret}
                             isLoading={isLoading}
                             onLoad={() => handleImageLoad(cardKey)}
                             onError={() => handleImageError(cardKey)}
                           />
                         </div>
                       </DialogContent>
+                      </>
+                      )}
                     </Dialog>
                   );
                 })}

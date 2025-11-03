@@ -177,7 +177,7 @@ function Start() {
                       )}
                       {themesMap[imageSet]?.cards?.[0] ? (
                         <img
-                          src={themesMap[imageSet].cards[0]}
+                          src={themesMap[imageSet].cards[0].url}
                           alt="card preview"
                           loading="lazy"
                           onLoad={() => setCardImageLoading(false)}

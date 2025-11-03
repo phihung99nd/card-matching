@@ -1,6 +1,6 @@
 export type Difficulty = "easy" | "medium" | "hard" | "hell";
 
-export interface GridSize {
+export interface GridData {
   cols: number;
   rows: number;
 }
@@ -19,12 +19,19 @@ export const TIME_LIMITS: Record<Difficulty, number> = {
   hell: 120,
 };
 
-export function getGridSize(difficulty: Difficulty): GridSize {
+export const SECRET_CHANCES: Record<Difficulty, number> = {
+  easy: 0.15,
+  medium: 0.1,
+  hard: 0.075,
+  hell: 0.05,
+};
+
+export function getGridSize(difficulty: Difficulty): GridData {
   switch (difficulty) {
     case "easy":
       return { cols: 4, rows: 3 }; // 12 cards
     case "medium":
-      return { cols: 6, rows: 3 }; // 18 cards
+      return { cols: 6, rows: 3}; // 18 cards
     case "hard":
       return { cols: 6, rows: 4 }; // 24 cards
     case "hell":
@@ -40,3 +47,6 @@ export function getFlipLimit(difficulty: Difficulty): number {
   return FLIP_LIMITS[difficulty];
 }
 
+export function getSecretChance(difficulty: Difficulty): number {
+  return SECRET_CHANCES[difficulty];
+}

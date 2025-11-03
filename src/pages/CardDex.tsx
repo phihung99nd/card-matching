@@ -175,7 +175,7 @@ function generateSparklePositions() {
   return sparkles;
 }
 
-// Sparkle heart effect component with pink hearts
+// Sparkle star effect component with white stars
 function SparkleStar() {
   const [sparkles, setSparkles] = useState<Array<{
     id: number;
@@ -192,7 +192,7 @@ function SparkleStar() {
   return (
     <>
       <style>{`
-        @keyframes sparkle {
+        @keyframes sparkle-snow {
           0%, 100% {
             opacity: 0;
             transform: translate(-50%, -50%) scale(0);
@@ -202,14 +202,14 @@ function SparkleStar() {
             transform: translate(-50%, -50%) scale(1.5);
           }
         }
-        .sparkle-heart {
+        .sparkle-star {
           position: absolute;
           width: 18px;
           height: 18px;
           pointer-events: none;
         }
-        .sparkle-heart::before,
-        .sparkle-heart::after {
+        .sparkle-star::before,
+        .sparkle-star::after {
           content: '✧';
           position: absolute;
           opacity: 0,
@@ -219,12 +219,12 @@ function SparkleStar() {
           text-shadow: 0 0 4px rgba(255, 255, 255, 0.8), 0 0 8px rgba(207, 207, 207, 0.8);
           transform-origin: center;
         }
-        .sparkle-heart::before {
+        .sparkle-star::before {
           left: 50%;
           top: 0;
           transform: translateX(-50%);
         }
-        .sparkle-heart::after {
+        .sparkle-star::after {
           display: none;
         }
       `}</style>
@@ -232,11 +232,11 @@ function SparkleStar() {
         {sparkles.map((sparkle) => (
           <div
             key={sparkle.id}
-            className="sparkle-heart"
+            className="sparkle-star"
             style={{
               left: `${sparkle.x}%`,
               top: `${sparkle.y}%`,
-              animation: `sparkle ${sparkle.duration}s ease-in-out infinite`,
+              animation: `sparkle-snow ${sparkle.duration}s ease-in-out infinite`,
               animationDelay: `${sparkle.delay}s`,
             }}
           />
@@ -247,6 +247,7 @@ function SparkleStar() {
 }
 
 // Sparkle heart effect component with pink hearts
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function SparkleHeart() {
   const [sparkles, setSparkles] = useState<Array<{
     id: number;
@@ -316,6 +317,81 @@ function SparkleHeart() {
               left: `${sparkle.x}%`,
               top: `${sparkle.y}%`,
               animation: `sparkle-heart ${sparkle.duration}s ease-in-out infinite`,
+              animationDelay: `${sparkle.delay}s`,
+            }}
+          />
+        ))}
+      </div>
+    </>
+  );
+}
+
+// Sparkle star effect component with white stars
+function SparkleSnowFlake() {
+  const [sparkles, setSparkles] = useState<Array<{
+    id: number;
+    x: number;
+    y: number;
+    delay: number;
+    duration: number;
+  }>>([]);
+
+  useEffect(() => {
+    setSparkles(generateSparklePositions());
+  }, []);
+
+  return (
+    <>
+      <style>{`
+        @keyframes sparkle-snow {
+          0% {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0) rotate(0deg);
+          }
+          50% {
+            opacity: 1;
+            transform: translate(-50%, 100%) scale(1) rotate(180deg);
+          }
+          100% {
+            opacity: 0;
+            transform: translate(-50%, 250%) scale(0) rotate(360deg);
+          }
+        }
+        .sparkle-snow {
+          position: absolute;
+          width: 18px;
+          height: 18px;
+          pointer-events: none;
+        }
+        .sparkle-snow::before,
+        .sparkle-snow::after {
+          content: '❄️';
+          position: absolute;
+          opacity: 0,
+          font-size: 18px;
+          color:rgb(255, 255, 255);
+          line-height: 1;
+          text-shadow: 0 0 4px rgba(255, 255, 255, 0.8), 0 0 8px rgba(207, 207, 207, 0.8);
+          transform-origin: center;
+        }
+        .sparkle-snow::before {
+          left: 50%;
+          top: 0;
+          transform: translateX(-50%);
+        }
+        .sparkle-snow::after {
+          display: none;
+        }
+      `}</style>
+      <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-lg z-20">
+        {sparkles.map((sparkle) => (
+          <div
+            key={sparkle.id}
+            className="sparkle-snow"
+            style={{
+              left: `${sparkle.x}%`,
+              top: `${sparkle.y}%`,
+              animation: `sparkle-snow ${sparkle.duration}s linear infinite`,
               animationDelay: `${sparkle.delay}s`,
             }}
           />
@@ -401,7 +477,7 @@ function InteractiveCard({
       ) : (
         <div className="relative flex items-center justify-center overflow-hidden rounded-lg bg-muted/30 shadow-xl w-[320px] h-[427px] sm:w-[400px] sm:h-[533px] md:w-[500px] md:h-[667px] lg:w-[600px] lg:h-[800px]">
           <ShimmerOverlay />
-          {foilType === 'star' ? <SparkleStar /> : <SparkleHeart />}
+          {foilType === 'star' ? <SparkleStar /> : <SparkleSnowFlake />}
           {isLoading && (
             <Skeleton className="absolute inset-0 w-full h-full z-0" />
           )}

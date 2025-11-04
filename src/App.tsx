@@ -9,7 +9,8 @@ import { ThemeProvider, useTheme } from '@/contexts/ThemeContext'
 import { Switch } from '@/components/ui/switch'
 import { Sun, Moon } from 'lucide-react'
 import { useIsDesktop } from '@/hooks/useIsDesktop'
-
+import { Analytics } from "@vercel/analytics/next"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
   
@@ -42,6 +43,8 @@ function AppContent() {
   
   return (
     <>
+      <Analytics />
+      <SpeedInsights />
       {isDesktop && <CustomCursor cursorImage='/cursor/glazed.png' pointerImage='/cursor/glazed-pointer.png'/>}
       <div className="min-h-screen bg-background text-foreground transition-colors">
         <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90">

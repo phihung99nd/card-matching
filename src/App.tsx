@@ -9,8 +9,8 @@ import { ThemeProvider, useTheme } from '@/contexts/ThemeContext'
 import { Switch } from '@/components/ui/switch'
 import { Sun, Moon } from 'lucide-react'
 import { useIsDesktop } from '@/hooks/useIsDesktop'
-import { Analytics } from "@vercel/analytics/next"
-import { SpeedInsights } from "@vercel/speed-insights/next"
+import { Analytics } from "@vercel/analytics/react"
+import { SpeedInsights } from "@vercel/speed-insights/react"
 function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
   
